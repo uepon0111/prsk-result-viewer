@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>プロセカ リザルト管理</title>
+    <title>プロセカ リザルト管理 (My Drive)</title>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     
@@ -12,251 +12,61 @@
         --bg-color: #f4f7f6;
         --card-bg: #ffffff;
         --text-color: #333;
-        
-        /* 指定カラー */
         --diff-append: #FF82C4;
         --diff-master: #AC3EE6;
         --diff-expert: #DC5268;
-        --diff-hard:   #E9B153;
-        --fc-color:    #FF82FF; /* FULL COMBO */
+        --diff-hard:    #E9B153;
+        --fc-color:     #FF82FF;
       }
-
-      body {
-        font-family: 'M PLUS Rounded 1c', sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        margin: 0;
-        padding: 20px;
-      }
-
+      body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
       .container { max-width: 1000px; margin: 0 auto; }
+      h2 { display: flex; align-items: center; gap: 10px; color: #444; }
+      .material-symbols-outlined { font-size: 1.2rem; vertical-align: sub; }
       
-      h2 {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #444;
+      /* 認証ボタン周り */
+      .auth-section { text-align: right; margin-bottom: 20px; }
+      .btn-auth {
+        background-color: #4285f4; color: white; border: none; padding: 10px 20px;
+        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;
       }
+      .btn-auth:hover { background-color: #357ae8; }
+      .btn-signout { background-color: #dc3545; }
+      .btn-signout:hover { background-color: #c82333; }
+      #auth-status { margin-right: 10px; font-size: 0.9rem; color: #666; }
 
-      /* アイコン共通 */
-      .material-symbols-outlined {
-        font-size: 1.2rem;
-        vertical-align: sub;
-      }
-
-      /* コントロールパネル */
-      .controls {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 15px;
-      }
+      /* Controls, Status, Grid, Card などのCSSは変更なし (省略) */
+      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
       .control-group { display: flex; flex-direction: column; }
-      .control-group label {
-        font-size: 0.8rem;
-        font-weight: bold;
-        color: #777;
-        margin-bottom: 6px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-      select, input {
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-family: inherit;
-        background-color: #fafafa;
-      }
-
-      /* ステータスバー */
-      .status-bar {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 15px;
-        font-size: 0.9rem;
-        color: #666;
-        font-weight: bold;
-      }
-
-      /* グリッドレイアウト */
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 20px;
-      }
-
-      /* カード */
-      .card {
-        background: var(--card-bg);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-        border: 2px solid transparent; /* 枠線準備 */
-      }
-      .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      }
-      
-      /* FC時の枠線色 */
+      .control-group label { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+      select, input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background-color: #fafafa; }
+      .status-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; font-size: 0.9rem; color: #666; font-weight: bold; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; }
+      .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
       .card.is-fc { border-color: var(--fc-color); }
-
-      /* サムネイルエリア */
-      .card-img-container {
-        width: 100%;
-        height: 140px;
-        background-color: #e0e2e5;
-        overflow: hidden;
-        position: relative;
-        cursor: zoom-in;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      
-      /* 画像 */
-      .card-img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        opacity: 0;
-        transition: opacity 0.3s ease-in;
-        position: relative;
-        z-index: 2;
-      }
-      .card-img:hover { opacity: 0.9; }
-
-      /* 画像ローダー */
-      .img-loader-spinner {
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        border: 3px solid #ddd;
-        border-top: 3px solid #999;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        z-index: 1;
-      }
-
-      /* バッジ */
-      .fc-badge {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: var(--fc-color);
-        color: white;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.75rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        z-index: 3;
-      }
-
-      /* カード本文 */
+      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; cursor: zoom-in; display: flex; justify-content: center; align-items: center; }
+      .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
+      .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
+      .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
       .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
-      
-      .song-meta {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 8px;
-        font-size: 0.75rem;
-      }
-      .tag {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        color: white;
-        letter-spacing: 0.5px;
-      }
+      .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
+      .tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; letter-spacing: 0.5px; }
       .tag.lvl { background-color: #555; }
-      
-      /* 難易度別カラー */
       .tag.diff-A { background-color: var(--diff-append); }
       .tag.diff-M { background-color: var(--diff-master); }
       .tag.diff-E { background-color: var(--diff-expert); }
       .tag.diff-H { background-color: var(--diff-hard); }
-
-      .song-title {
-        font-weight: bold;
-        font-size: 0.95rem;
-        margin-bottom: 12px;
-        line-height: 1.4;
-      }
-      
-      .score-info {
-        font-size: 0.9rem;
-        color: #666;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-top: 1px solid #f0f0f0;
-        padding-top: 8px;
-        margin-top: auto;
-      }
+      .song-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.4; }
+      .score-info { font-size: 0.9rem; color: #666; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 8px; margin-top: auto; }
       .miss-val { font-weight: bold; }
       .miss-val.zero { color: var(--fc-color); } 
-      
-      /* 全体ローディング */
-      #loader {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 50px;
-        color: #666;
-      }
-      .spinner {
-        width: 40px; height: 40px;
-        border: 4px solid #eee; border-top: 4px solid var(--diff-master);
-        border-radius: 50%; animation: spin 1s linear infinite;
-        margin-bottom: 10px;
-      }
+      #loader { display: none; flex-direction: column; align-items: center; margin-top: 50px; color: #666; }
+      .spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top: 4px solid var(--diff-master); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-      /* モーダル */
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.85);
-        backdrop-filter: blur(5px);
-        justify-content: center;
-        align-items: center;
-      }
-      .modal-content {
-        max-width: 90%;
-        max-height: 90%;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        object-fit: contain;
-      }
-      .close-btn {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: #fff;
-        font-size: 40px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 1001;
-        transition: color 0.2s;
-      }
+      .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+      .modal-content { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
+      .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
-
     </style>
   </head>
   <body>
@@ -267,7 +77,17 @@
     </div>
 
     <div class="container">
-      <h2><span class="material-symbols-outlined">library_music</span> リザルト管理</h2>
+      <div class="auth-section">
+        <span id="auth-status">未ログイン</span>
+        <button id="authorize_button" class="btn-auth" onclick="handleAuthClick()">
+          <span class="material-symbols-outlined">login</span> Googleでログイン
+        </button>
+        <button id="signout_button" class="btn-auth btn-signout" onclick="handleSignoutClick()" style="display: none;">
+          <span class="material-symbols-outlined">logout</span> ログアウト
+        </button>
+      </div>
+
+      <h2><span class="material-symbols-outlined">library_music</span> リザルト管理 (My Drive)</h2>
       
       <div class="controls">
         <div class="control-group">
@@ -319,54 +139,256 @@
       </div>
 
       <div class="status-bar">
-        <span id="result-count">取得中...</span>
+        <span id="result-count">ログインしてください</span>
       </div>
 
       <div id="loader">
         <div class="spinner"></div>
-        <div>データを読み込み中...</div>
+        <div id="loader-text">データを読み込み中...</div>
       </div>
       
       <div id="grid" class="grid"></div>
     </div>
 
-    <script>
-      // ↓↓↓ ここにGASのデプロイURLを貼ってください ↓↓↓
-      const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzA9p0hWg90v4U4znxm6LA9YFzcf-DD98jRRXOdwlwuKmPx6gvs-prGqJOpv6sJtiVIoQ/exec"; 
-      //
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
+    <script>
+      // ↓↓↓ GCPで取得した値を設定してください ↓↓↓
+      const CLIENT_ID = '966636096862-8hrrm5heb4g5r469veoels7u6ifjguuk.apps.googleusercontent.com';
+      const API_KEY = 'AIzaSyC-m1rkHuJTmNK2k-s89bJFshvXCS5MZZ0';
+      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+      
+      const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+      const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+      let tokenClient;
+      let gapiInited = false;
+      let gisInited = false;
       let allRecords = [];
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
-      
-      function getDiffScore(rawDiff) {
-        return diffRank[rawDiff] || 0;
+
+      // --- 認証関連 ---
+
+      function gapiLoaded() {
+        gapi.load('client', initializeGapiClient);
       }
 
-      window.onload = function() {
-        // google.script.run の代わりに fetch を使用
-        fetch(GAS_API_URL)
-          .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-          })
-          .then(data => {
-            // エラーオブジェクトが返ってきた場合
-            if (data.error) throw new Error(data.error);
-            onDataLoaded(data);
-          })
-          .catch(error => {
-            alert("データ取得エラー: " + error.message);
-            document.getElementById('loader').innerHTML = "読み込みに失敗しました。";
-          });
-      };
+      async function initializeGapiClient() {
+        await gapi.client.init({
+          apiKey: API_KEY,
+          discoveryDocs: [DISCOVERY_DOC],
+        });
+        gapiInited = true;
+        maybeEnableButtons();
+      }
 
-      function onDataLoaded(data) {
-        allRecords = data;
+      function gisLoaded() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: '', // 定義時に設定
+        });
+        gisInited = true;
+        maybeEnableButtons();
+      }
+
+      function maybeEnableButtons() {
+        if (gapiInited && gisInited) {
+          // 準備完了
+          // 自動ログインを試みる場合はここに記述可能ですが、
+          // 最近のブラウザポリシーではユーザーアクションが推奨されます。
+        }
+      }
+
+      function handleAuthClick() {
+        tokenClient.callback = async (resp) => {
+          if (resp.error !== undefined) {
+            throw (resp);
+          }
+          document.getElementById('signout_button').style.display = 'inline-flex';
+          document.getElementById('authorize_button').style.display = 'none';
+          document.getElementById('auth-status').innerText = 'ログイン済み';
+          await fetchDataFromDrive();
+        };
+
+        if (gapi.client.getToken() === null) {
+          tokenClient.requestAccessToken({prompt: 'consent'});
+        } else {
+          tokenClient.requestAccessToken({prompt: ''});
+        }
+      }
+
+      function handleSignoutClick() {
+        const token = gapi.client.getToken();
+        if (token !== null) {
+          google.accounts.oauth2.revoke(token.access_token);
+          gapi.client.setToken('');
+          document.getElementById('result-count').innerText = 'ログアウトしました';
+          document.getElementById('grid').innerHTML = '';
+          document.getElementById('authorize_button').style.display = 'inline-flex';
+          document.getElementById('signout_button').style.display = 'none';
+          document.getElementById('auth-status').innerText = '未ログイン';
+          allRecords = [];
+        }
+      }
+
+      // --- Drive データ取得ロジック (GASから移植) ---
+
+      async function fetchDataFromDrive() {
+        const loader = document.getElementById('loader');
+        loader.style.display = 'flex';
+        document.getElementById('result-count').innerText = 'データ取得中...';
+        document.getElementById('loader-text').innerText = 'フォルダ構造を解析中...';
+        
+        try {
+          const ROOT_FOLDER_NAME = "プロセカリザルト";
+          const SOURCE_PATH = ["FC"];
+
+          // 1. ルートフォルダ特定
+          const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
+          if (!rootFolder) throw new Error(`フォルダ「${ROOT_FOLDER_NAME}」が見つかりません。`);
+
+          // パスを辿る
+          let currentFolder = rootFolder;
+          for (const name of SOURCE_PATH) {
+             const found = await getFolderByName(name, currentFolder.id);
+             if (!found) throw new Error(`フォルダ「${name}」が見つかりません。`);
+             currentFolder = found;
+          }
+          const sourceFolderId = currentFolder.id;
+
+          // 2. 楽曲フォルダ取得
+          document.getElementById('loader-text').innerText = '楽曲情報を取得中...';
+          const folderQuery = `'${sourceFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+          const songFolders = await fetchAllDriveItems(folderQuery, "id, name");
+          
+          const folderMap = new Map();
+          songFolders.forEach(folder => {
+            const metadata = parseFolderTitle(folder.name);
+            if (metadata) {
+              folderMap.set(folder.id, metadata);
+            }
+          });
+
+          if (songFolders.length === 0) {
+            allRecords = [];
+            onDataLoaded();
+            return;
+          }
+
+          // 3. 画像ファイル取得
+          document.getElementById('loader-text').innerText = 'リザルト画像を検索中...';
+          const fileQuery = `name contains 'FC' and mimeType != 'application/vnd.google-apps.folder' and trashed = false`;
+          // v3では title ではなく name。 parents は配列。
+          const candidateFiles = await fetchAllDriveItems(fileQuery, "id, name, parents, thumbnailLink");
+
+          // 4. データ結合
+          const records = [];
+          candidateFiles.forEach(file => {
+            if (!file.parents || file.parents.length === 0) return;
+            // parents配列の中に folderMap のキー(楽曲フォルダID)があるか探す
+            const parentId = file.parents.find(p => folderMap.has(p));
+            
+            if (parentId) {
+              const songInfo = folderMap.get(parentId);
+              const missCount = parseScore(file.name);
+
+              if (missCount !== null) {
+                records.push({
+                  id: file.id,
+                  title: songInfo.title,
+                  level: songInfo.level,
+                  difficulty: songInfo.difficulty,
+                  difficultyRaw: songInfo.rawDiff,
+                  missCount: missCount,
+                  isFC: (missCount === 0),
+                  thumbnail: file.thumbnailLink || null
+                });
+              }
+            }
+          });
+
+          allRecords = records;
+          onDataLoaded();
+
+        } catch (e) {
+          console.error(e);
+          alert("エラーが発生しました: " + e.message);
+          loader.style.display = 'none';
+        }
+      }
+
+      // --- Drive API Helper Functions ---
+
+      async function fetchAllDriveItems(query, fields) {
+        let items = [];
+        let pageToken = null;
+        do {
+          const response = await gapi.client.drive.files.list({
+            q: query,
+            fields: `nextPageToken, files(${fields})`,
+            pageSize: 1000,
+            pageToken: pageToken
+          });
+          const result = response.result;
+          if (result.files && result.files.length > 0) {
+            items = items.concat(result.files);
+          }
+          pageToken = result.nextPageToken;
+        } while (pageToken);
+        return items;
+      }
+
+      async function getFolderByName(name, parentId = null) {
+        let query = `mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
+        if (parentId) {
+          query += ` and '${parentId}' in parents`;
+        }
+        const response = await gapi.client.drive.files.list({
+          q: query,
+          fields: 'files(id, name)',
+          pageSize: 1
+        });
+        const files = response.result.files;
+        return (files && files.length > 0) ? files[0] : null;
+      }
+
+      // --- Parsing Helpers (Logic from GAS) ---
+
+      function parseFolderTitle(folderName) {
+        const regex = /^(\d+)([AMEH])\s+(.+)$/;
+        const match = folderName.match(regex);
+        if (!match) return null;
+        const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' };
+        return {
+          level: parseInt(match[1], 10),
+          rawDiff: match[2],
+          difficulty: diffMap[match[2]] || match[2],
+          title: match[3]
+        };
+      }
+
+      function parseScore(fileName) {
+        const regex = /^FC(?:-(\d+))?/;
+        const match = fileName.match(regex);
+        if (match) {
+          return match[1] === undefined ? 0 : parseInt(match[1], 10);
+        }
+        return null;
+      }
+
+      // --- UI Logic (Previously existing) ---
+
+      function getDiffScore(rawDiff) { return diffRank[rawDiff] || 0; }
+
+      function onDataLoaded() {
         document.getElementById('loader').style.display = 'none';
         updateView();
       }
 
       function updateView() {
+        if (!allRecords) return;
         const fcFilter = document.getElementById('filter-fc').value;
         const missFilter = document.getElementById('filter-miss').value;
         const diffFilter = document.getElementById('filter-diff').value;
@@ -426,12 +448,12 @@
         }
 
         records.forEach(rec => {
-          // Google DriveのサムネイルURL調整
+          // サムネイルリンク調整はDrive API v3のthumbnailLinkに合わせて必要なら調整
+          // デフォルトで小さなサムネイルが返るため、パラメータ置換で高画質化を試みる
           let thumbUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w600') : ''; 
           let largeUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
 
           const fcClass = rec.isFC ? 'is-fc' : '';
-          
           const missDisplay = rec.isFC ? 
             `<span class="miss-val zero">FC-0</span>` : 
             `FC -<span class="miss-val">${rec.missCount}</span>`;
