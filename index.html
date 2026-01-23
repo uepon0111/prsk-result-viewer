@@ -34,22 +34,11 @@
       .btn-signout:hover { background-color: #c82333; }
       #auth-status { margin-right: 10px; font-size: 0.9rem; color: #666; }
 
-      /* Controls */
+      /* Controls, Status, Grid, Card などのCSSは変更なし (省略) */
       .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
       .control-group { display: flex; flex-direction: column; }
       .control-group label { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
       select, input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background-color: #fafafa; }
-      
-      /* Picker Button Style */
-      .btn-picker {
-        background-color: #fff; border: 2px solid #4285f4; color: #4285f4; padding: 9px;
-        border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s;
-        text-align: left; display: flex; align-items: center; justify-content: space-between;
-      }
-      .btn-picker:hover { background-color: #ebf3fe; }
-      .btn-picker:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; background-color: #f9f9f9; }
-      #folder-name-display { font-size: 0.8rem; color: #666; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
       .status-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; font-size: 0.9rem; color: #666; font-weight: bold; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
       .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; }
@@ -102,15 +91,6 @@
       
       <div class="controls">
         <div class="control-group">
-          <label><span class="material-symbols-outlined">folder_open</span> 対象フォルダ</label>
-          <button id="picker-btn" class="btn-picker" onclick="createPicker()" disabled>
-            <span>フォルダを選択...</span>
-            <span class="material-symbols-outlined">arrow_drop_down</span>
-          </button>
-          <div id="folder-name-display">（未選択）</div>
-        </div>
-
-        <div class="control-group">
           <label><span class="material-symbols-outlined">sort</span> 並べ替え</label>
           <select id="sort-order" onchange="updateView()">
             <option value="title_asc">曲名 (昇順)</option>
@@ -159,7 +139,7 @@
       </div>
 
       <div class="status-bar">
-        <span id="result-count">ログインしてフォルダを選択してください</span>
+        <span id="result-count">ログインしてください</span>
       </div>
 
       <div id="loader">
@@ -185,15 +165,13 @@
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
-      let pickerInited = false;
       let allRecords = [];
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
       // --- 認証関連 ---
 
       function gapiLoaded() {
-        // clientとpickerをロード
-        gapi.load('client:picker', initializeGapiClient);
+        gapi.load('client', initializeGapiClient);
       }
 
       async function initializeGapiClient() {
@@ -202,7 +180,6 @@
           discoveryDocs: [DISCOVERY_DOC],
         });
         gapiInited = true;
-        pickerInited = true; // Pickerライブラリ読み込み完了
         maybeEnableButtons();
       }
 
@@ -219,6 +196,8 @@
       function maybeEnableButtons() {
         if (gapiInited && gisInited) {
           // 準備完了
+          // 自動ログインを試みる場合はここに記述可能ですが、
+          // 最近のブラウザポリシーではユーザーアクションが推奨されます。
         }
       }
 
@@ -230,10 +209,7 @@
           document.getElementById('signout_button').style.display = 'inline-flex';
           document.getElementById('authorize_button').style.display = 'none';
           document.getElementById('auth-status').innerText = 'ログイン済み';
-          
-          // Pickerボタンを有効化
-          document.getElementById('picker-btn').disabled = false;
-          document.getElementById('result-count').innerText = 'フォルダを選択してください';
+          await fetchDataFromDrive();
         };
 
         if (gapi.client.getToken() === null) {
@@ -253,64 +229,38 @@
           document.getElementById('authorize_button').style.display = 'inline-flex';
           document.getElementById('signout_button').style.display = 'none';
           document.getElementById('auth-status').innerText = '未ログイン';
-          // Picker無効化
-          document.getElementById('picker-btn').disabled = true;
-          document.getElementById('folder-name-display').innerText = '（未選択）';
           allRecords = [];
         }
       }
 
-      // --- Google Picker (フォルダ選択) ---
+      // --- Drive データ取得ロジック (GASから移植) ---
 
-      function createPicker() {
-        if (!pickerInited) return;
-        const token = gapi.client.getToken();
-        if (!token) return;
-
-        const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-          .setSelectFolderEnabled(true) // フォルダを選択可能にする
-          .setIncludeFolders(true)
-          .setMimeTypes('application/vnd.google-apps.folder');
-
-        const picker = new google.picker.PickerBuilder()
-          .enableFeature(google.picker.Feature.NAV_HIDDEN)
-          .setAppId(CLIENT_ID) // Project IDの方が正確ですが、Client IDの一部でも動くことが多い
-          .setOAuthToken(token.access_token)
-          .setDeveloperKey(API_KEY)
-          .addView(view)
-          .setCallback(pickerCallback)
-          .setTitle('楽曲フォルダが含まれている親フォルダ(FCなど)を選択')
-          .build();
-        picker.setVisible(true);
-      }
-
-      async function pickerCallback(data) {
-        if (data.action === google.picker.Action.PICKED) {
-          const doc = data.docs[0];
-          const folderId = doc.id;
-          const folderName = doc.name;
-
-          document.getElementById('folder-name-display').innerText = `選択中: ${folderName}`;
-          
-          // データ取得開始
-          await fetchDataFromDrive(folderId);
-        }
-      }
-
-      // --- Drive データ取得ロジック (フォルダ指定版) ---
-
-      async function fetchDataFromDrive(targetFolderId) {
+      async function fetchDataFromDrive() {
         const loader = document.getElementById('loader');
         loader.style.display = 'flex';
         document.getElementById('result-count').innerText = 'データ取得中...';
-        document.getElementById('grid').innerHTML = ''; // グリッドをクリア
+        document.getElementById('loader-text').innerText = 'フォルダ構造を解析中...';
         
         try {
-          if (!targetFolderId) throw new Error("フォルダIDが指定されていません。");
+          const ROOT_FOLDER_NAME = "プロセカリザルト";
+          const SOURCE_PATH = ["FC"];
 
-          // 1. 指定されたフォルダ直下の楽曲フォルダ取得
-          document.getElementById('loader-text').innerText = '楽曲フォルダを取得中...';
-          const folderQuery = `'${targetFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+          // 1. ルートフォルダ特定
+          const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
+          if (!rootFolder) throw new Error(`フォルダ「${ROOT_FOLDER_NAME}」が見つかりません。`);
+
+          // パスを辿る
+          let currentFolder = rootFolder;
+          for (const name of SOURCE_PATH) {
+             const found = await getFolderByName(name, currentFolder.id);
+             if (!found) throw new Error(`フォルダ「${name}」が見つかりません。`);
+             currentFolder = found;
+          }
+          const sourceFolderId = currentFolder.id;
+
+          // 2. 楽曲フォルダ取得
+          document.getElementById('loader-text').innerText = '楽曲情報を取得中...';
+          const folderQuery = `'${sourceFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
           const songFolders = await fetchAllDriveItems(folderQuery, "id, name");
           
           const folderMap = new Map();
@@ -324,16 +274,16 @@
           if (songFolders.length === 0) {
             allRecords = [];
             onDataLoaded();
-            alert("選択したフォルダ内に「数字+難易度+曲名」形式のフォルダが見つかりませんでした。");
             return;
           }
 
-          // 2. 画像ファイル取得
+          // 3. 画像ファイル取得
           document.getElementById('loader-text').innerText = 'リザルト画像を検索中...';
           const fileQuery = `name contains 'FC' and mimeType != 'application/vnd.google-apps.folder' and trashed = false`;
+          // v3では title ではなく name。 parents は配列。
           const candidateFiles = await fetchAllDriveItems(fileQuery, "id, name, parents, thumbnailLink");
 
-          // 3. データ結合
+          // 4. データ結合
           const records = [];
           candidateFiles.forEach(file => {
             if (!file.parents || file.parents.length === 0) return;
@@ -388,6 +338,20 @@
           pageToken = result.nextPageToken;
         } while (pageToken);
         return items;
+      }
+
+      async function getFolderByName(name, parentId = null) {
+        let query = `mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
+        if (parentId) {
+          query += ` and '${parentId}' in parents`;
+        }
+        const response = await gapi.client.drive.files.list({
+          q: query,
+          fields: 'files(id, name)',
+          pageSize: 1
+        });
+        const files = response.result.files;
+        return (files && files.length > 0) ? files[0] : null;
       }
 
       // --- Parsing Helpers (Logic from GAS) ---
