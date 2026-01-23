@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>プロセカ リザルト管理</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <style>
+      :root {
+        --bg-color: #f4f7f6;
+        --card-bg: #ffffff;
+        --text-color: #333;
+        
+        /* 指定カラー */
+        --diff-append: #FF82C4;
+        --diff-master: #AC3EE6;
+        --diff-expert: #DC5268;
+        --diff-hard:   #E9B153;
+        --fc-color:    #FF82FF; /* FULL COMBO */
+      }
+
+      body {
+        font-family: 'M PLUS Rounded 1c', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container { max-width: 1000px; margin: 0 auto; }
+      
+      h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #444;
+      }
+
+      /* アイコン共通 */
+      .material-symbols-outlined {
+        font-size: 1.2rem;
+        vertical-align: sub;
+      }
+
+      /* コントロールパネル */
+      .controls {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 15px;
+      }
+      .control-group { display: flex; flex-direction: column; }
+      .control-group label {
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #777;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      select, input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: inherit;
+        background-color: #fafafa;
+      }
+
+      /* ステータスバー */
+      .status-bar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+        color: #666;
+        font-weight: bold;
+      }
+
+      /* グリッドレイアウト */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 20px;
+      }
+
+      /* カード */
+      .card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        border: 2px solid transparent; /* 枠線準備 */
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      }
+      
+      /* FC時の枠線色 */
+      .card.is-fc { border-color: var(--fc-color); }
+
+      /* サムネイルエリア */
+      .card-img-container {
+        width: 100%;
+        height: 140px;
+        background-color: #e0e2e5;
+        overflow: hidden;
+        position: relative;
+        cursor: zoom-in;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      /* 画像 */
+      .card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 0.3s ease-in;
+        position: relative;
+        z-index: 2;
+      }
+      .card-img:hover { opacity: 0.9; }
+
+      /* 画像ローダー */
+      .img-loader-spinner {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border: 3px solid #ddd;
+        border-top: 3px solid #999;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        z-index: 1;
+      }
+
+      /* バッジ */
+      .fc-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: var(--fc-color);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        z-index: 3;
+      }
+
+      /* カード本文 */
+      .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+      
+      .song-meta {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 0.75rem;
+      }
+      .tag {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: white;
+        letter-spacing: 0.5px;
+      }
+      .tag.lvl { background-color: #555; }
+      
+      /* 難易度別カラー */
+      .tag.diff-A { background-color: var(--diff-append); }
+      .tag.diff-M { background-color: var(--diff-master); }
+      .tag.diff-E { background-color: var(--diff-expert); }
+      .tag.diff-H { background-color: var(--diff-hard); }
+
+      .song-title {
+        font-weight: bold;
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+        line-height: 1.4;
+      }
+      
+      .score-info {
+        font-size: 0.9rem;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 8px;
+        margin-top: auto;
+      }
+      .miss-val { font-weight: bold; }
+      .miss-val.zero { color: var(--fc-color); } 
+      
+      /* 全体ローディング */
+      #loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 50px;
+        color: #666;
+      }
+      .spinner {
+        width: 40px; height: 40px;
+        border: 4px solid #eee; border-top: 4px solid var(--diff-master);
+        border-radius: 50%; animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+      /* モーダル */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.85);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        object-fit: contain;
+      }
+      .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        transition: color 0.2s;
+      }
+      .close-btn:hover { color: var(--fc-color); }
+
+    </style>
+  </head>
+  <body>
+
+    <div id="imageModal" class="modal" onclick="closeModal()">
+      <span class="close-btn">&times;</span>
+      <img class="modal-content" id="modalImg">
+    </div>
+
+    <div class="container">
+      <h2><span class="material-symbols-outlined">library_music</span> リザルト管理</h2>
+      
+      <div class="controls">
+        <div class="control-group">
+          <label><span class="material-symbols-outlined">sort</span> 並べ替え</label>
+          <select id="sort-order" onchange="updateView()">
+            <option value="title_asc">曲名 (昇順)</option>
+            <option value="title_desc">曲名 (降順)</option>
+            <option value="level_desc" selected>レベル (高い順)</option>
+            <option value="level_asc">レベル (低い順)</option>
+            <option value="miss_asc">失点数 (少ない順)</option>
+            <option value="miss_desc">失点数 (多い順)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label><span class="material-symbols-outlined">filter_alt</span> FC状況</label>
+          <select id="filter-fc" onchange="updateView()">
+            <option value="all">すべて</option>
+            <option value="fc">FC済み (FC-0)</option>
+            <option value="unfc">未FC (失点あり)</option>
+          </select>
+        </div>
+        
+        <div class="control-group">
+          <label><span class="material-symbols-outlined">remove_circle</span> 失点数</label>
+          <select id="filter-miss" onchange="updateView()">
+            <option value="all">指定なし</option>
+            <option value="range-1-5">1 ～ 5</option>
+            <option value="range-6-10">6 ～ 10</option>
+            <option value="range-11">11以上</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label><span class="material-symbols-outlined">speed</span> 難易度</label>
+          <select id="filter-diff" onchange="updateView()">
+            <option value="all">すべて</option>
+            <option value="A">Append</option>
+            <option value="M">Master</option>
+            <option value="E">Expert</option>
+            <option value="H">Hard</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label><span class="material-symbols-outlined">search</span> レベル検索</label>
+          <input type="number" id="filter-level" placeholder="" oninput="updateView()">
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <span id="result-count">取得中...</span>
+      </div>
+
+      <div id="loader">
+        <div class="spinner"></div>
+        <div>データを読み込み中...</div>
+      </div>
+      
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <script>
+      // ↓↓↓ ここにGASのデプロイURLを貼ってください ↓↓↓
+      const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzA9p0hWg90v4U4znxm6LA9YFzcf-DD98jRRXOdwlwuKmPx6gvs-prGqJOpv6sJtiVIoQ/exec"; 
+      //
+
+      let allRecords = [];
+      const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
+      
+      function getDiffScore(rawDiff) {
+        return diffRank[rawDiff] || 0;
+      }
+
+      window.onload = function() {
+        // google.script.run の代わりに fetch を使用
+        fetch(GAS_API_URL)
+          .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+          })
+          .then(data => {
+            // エラーオブジェクトが返ってきた場合
+            if (data.error) throw new Error(data.error);
+            onDataLoaded(data);
+          })
+          .catch(error => {
+            alert("データ取得エラー: " + error.message);
+            document.getElementById('loader').innerHTML = "読み込みに失敗しました。";
+          });
+      };
+
+      function onDataLoaded(data) {
+        allRecords = data;
+        document.getElementById('loader').style.display = 'none';
+        updateView();
+      }
+
+      function updateView() {
+        const fcFilter = document.getElementById('filter-fc').value;
+        const missFilter = document.getElementById('filter-miss').value;
+        const diffFilter = document.getElementById('filter-diff').value;
+        const levelFilter = document.getElementById('filter-level').value;
+
+        let filtered = allRecords.filter(record => {
+          if (fcFilter === 'fc' && !record.isFC) return false;
+          if (fcFilter === 'unfc' && record.isFC) return false;
+
+          if (missFilter !== 'all') {
+             if (record.isFC) return false;
+             if (missFilter === 'range-1-5' && (record.missCount < 1 || record.missCount > 5)) return false;
+             if (missFilter === 'range-6-10' && (record.missCount < 6 || record.missCount > 10)) return false;
+             if (missFilter === 'range-11' && record.missCount < 11) return false;
+          }
+
+          if (diffFilter !== 'all' && record.difficultyRaw !== diffFilter) return false;
+          if (levelFilter && record.level != levelFilter) return false;
+          return true;
+        });
+
+        const sortOrder = document.getElementById('sort-order').value;
+        
+        filtered.sort((a, b) => {
+          const titleAsc = a.title.localeCompare(b.title, 'ja');
+          const titleDesc = b.title.localeCompare(a.title, 'ja');
+          const levelDesc = b.level - a.level;
+          const levelAsc = a.level - b.level;
+          const diffDesc = getDiffScore(b.difficultyRaw) - getDiffScore(a.difficultyRaw); 
+          const missAsc = a.missCount - b.missCount;
+          const missDesc = b.missCount - a.missCount;
+
+          switch (sortOrder) {
+            case 'title_asc': return titleAsc || diffDesc || missAsc;
+            case 'title_desc': return titleDesc || diffDesc || missAsc;
+            case 'level_desc': return levelDesc || titleAsc || diffDesc || missAsc;
+            case 'level_asc': return levelAsc || titleAsc || diffDesc || missAsc;
+            case 'miss_asc': return missAsc || levelDesc || diffDesc || titleAsc;
+            case 'miss_desc': return missDesc || levelDesc || diffDesc || titleAsc;
+            default: return 0;
+          }
+        });
+
+        renderGrid(filtered);
+      }
+
+      function renderGrid(records) {
+        const grid = document.getElementById('grid');
+        const countLabel = document.getElementById('result-count');
+        
+        countLabel.textContent = `表示: ${records.length} 件`;
+        grid.innerHTML = '';
+
+        if (records.length === 0) {
+          grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#666;">該当するデータがありません</div>';
+          return;
+        }
+
+        records.forEach(rec => {
+          // Google DriveのサムネイルURL調整
+          let thumbUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w600') : ''; 
+          let largeUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
+
+          const fcClass = rec.isFC ? 'is-fc' : '';
+          
+          const missDisplay = rec.isFC ? 
+            `<span class="miss-val zero">FC-0</span>` : 
+            `FC -<span class="miss-val">${rec.missCount}</span>`;
+          
+          const badge = rec.isFC ? 
+            `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
+
+          const html = `
+            <div class="card ${fcClass}">
+              <div class="card-img-container" onclick="openModal('${largeUrl}')">
+                ${badge}
+                <div class="img-loader-spinner"></div>
+                ${thumbUrl ? 
+                  `<img src="${thumbUrl}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` 
+                  : '<span style="color:#aaa;">NO IMAGE</span>'}
+              </div>
+              <div class="card-body">
+                <div class="song-meta">
+                  <span class="tag lvl">Lv.${rec.level}</span>
+                  <span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span>
+                </div>
+                <div class="song-title">${escapeHtml(rec.title)}</div>
+                <div class="score-info">
+                  <span style="display:flex; align-items:center; gap:2px;">
+                    <span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result
+                  </span>
+                  ${missDisplay}
+                </div>
+              </div>
+            </div>
+          `;
+          grid.innerHTML += html;
+        });
+      }
+
+      function openModal(src) {
+        if(!src) return;
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImg');
+        modal.style.display = "flex";
+        modalImg.src = src;
+      }
+
+      function closeModal() {
+        document.getElementById('imageModal').style.display = "none";
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        return text.toString().replace(/[&<>"']/g, function(m) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+      }
+    </script>
+  </body>
+</html>
