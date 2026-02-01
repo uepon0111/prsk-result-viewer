@@ -489,6 +489,27 @@
         });
       }
 
+      // --- Helper: Levenshtein Distance for Similarity ---
+      function getLevenshteinDistance(a, b) {
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+              matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+              matrix[i][j] = Math.min(
+                matrix[i - 1][j - 1] + 1, // substitution
+                Math.min(matrix[i][j - 1] + 1, // insertion
+                matrix[i - 1][j] + 1) // deletion
+              ); 
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      }
+
       // --- Upload & Preview & OCR Logic ---
 
       function openUploadModal() {
@@ -539,21 +560,40 @@
           const text = ret.data.text;
           console.log("OCR Raw Text:", text); // デバッグ用
 
-          // --- 1. 難易度解析 ---
-          const diffMatch = text.match(/(APPEND|MASTER|EXPERT|HARD)/i);
-          let detectedDiff = "";
-          if (diffMatch) {
-             const d = diffMatch[1].toUpperCase();
-             const map = { 'APPEND':'A', 'MASTER':'M', 'EXPERT':'E', 'HARD':'H' };
-             if (map[d]) {
-               detectedDiff = map[d];
-               document.getElementById('up-diff').value = detectedDiff;
-             }
+          // --- 1. 難易度解析 (Levenshtein Distance) ---
+          // 完全一致ではなく、最も近い単語を探す
+          const upperText = text.toUpperCase();
+          const tokens = upperText.split(/[\s\n\t.,:\-\[\]]+/); // 単語に分割
+
+          const diffTargets = [
+            { name: 'APPEND', code: 'A' },
+            { name: 'MASTER', code: 'M' },
+            { name: 'EXPERT', code: 'E' },
+            { name: 'HARD',   code: 'H' }
+          ];
+
+          let bestDiffCode = null;
+          let bestDiffDist = 3; // 許容する最大誤差（これより小さい距離のものを採用）
+
+          tokens.forEach(token => {
+            // 短すぎる単語はノイズの可能性が高いので無視 (難易度は最短でもHARDの4文字)
+            if (token.length < 3) return;
+
+            diffTargets.forEach(tgt => {
+              const dist = getLevenshteinDistance(token, tgt.name);
+              // より距離が近い(似ている)ものが見つかれば更新
+              if (dist < bestDiffDist) {
+                bestDiffDist = dist;
+                bestDiffCode = tgt.code;
+              }
+            });
+          });
+
+          if (bestDiffCode) {
+            document.getElementById('up-diff').value = bestDiffCode;
           }
 
           // --- 2. レベル解析 (改善版) ---
-          // "Lv.35", "Lv35", "LEVEL 35" などを検索
-          // OCR誤検知対策: 楽曲Lvが読めない場合、難易度の近くにある数字(20~40)を拾う
           let levelFound = null;
           
           // パターンA: 明示的なLv表記
@@ -561,21 +601,20 @@
           if (levelMatch) {
             levelFound = levelMatch[1];
           } 
-          // パターンB: 難易度名の直後に数字がある場合 (例: MASTER 33)
-          else if (diffMatch) {
-             // 難易度の文字列の後ろにある数字を探す正規表現
-             const regexDiffNum = new RegExp(diffMatch[1] + "[^0-9\n]*(\\d+)", "i");
-             const diffNumMatch = text.match(regexDiffNum);
+          // パターンB: 難易度(と思われる単語)の直後に数字がある場合
+          // OCRで難易度文字列が多少崩れていても、それっぽい大文字の塊の後ろの数字を探す
+          else {
+             // 簡易的にMASTER等の頭文字付近を探す
+             const diffNumMatch = text.match(/(?:MASTER|EXPERT|HARD|APPEND)[^0-9\n]*(\d+)/i);
              if (diffNumMatch && parseInt(diffNumMatch[1]) > 10) {
-                levelFound = diffNumMatch[1];
+               levelFound = diffNumMatch[1];
              }
           }
 
-          // パターンC: 単独の数字でそれっぽいもの (25~38: Master/Append帯)
+          // パターンC: 単独の数字でそれっぽいもの (20~38)
           if (!levelFound) {
              const likelyNums = text.match(/\b([23][0-9])\b/g); // 20-39
              if (likelyNums && likelyNums.length === 1) {
-                // 候補が1つしかなければそれを採用
                 levelFound = likelyNums[0];
              }
           }
@@ -585,11 +624,9 @@
           }
 
           // --- 3. ミス数解析 (GOOD/BAD/MISS) 改善版 ---
-          // 右側のCOMBOやFAST/LATEの数字を拾わないように、ラベルの直後の数字のみを厳密に取得する
           
           const extractSpecificCount = (label) => {
              // ラベル(GOODなど)の後、数字以外の文字(スペースや記号)があり、その後の数字を取得
-             // ただし改行(\n)が来る前までの数字に限る。これにより右側の別項目の数字混入を防ぐ(行単位解析に近い挙動)
              const regex = new RegExp(label + "[^0-9\n]*([0-9oO]+)", "i");
              const m = text.match(regex);
              if (m) {
@@ -616,12 +653,10 @@
           
           if (headerIndex !== -1) {
             const headerLine = lines[headerIndex];
-            // 同じ行にタイトルがあるか試す (難易度より前の文字)
             const splitMatch = headerLine.match(/^(.*?)[\s\t]+(?:APPEND|MASTER|EXPERT|HARD)/i);
             if (splitMatch && splitMatch[1].trim().length > 1) {
                title = splitMatch[1].trim();
             } else if (headerIndex > 0) {
-               // 前の行がタイトルである可能性が高い
                title = lines[headerIndex - 1];
             }
           }
