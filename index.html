@@ -85,7 +85,7 @@
       .modal-content-img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
       
       /* Upload Modal Specific */
-      .modal-form-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+      .modal-form-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto; }
       .modal-header { font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
       .form-group { margin-bottom: 15px; }
       .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
@@ -94,6 +94,10 @@
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
       
+      /* Image Preview */
+      .preview-container { text-align: center; margin-bottom: 15px; background: #f0f0f0; border-radius: 8px; overflow: hidden; display: none; }
+      #preview-img { max-width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto; }
+
       /* OCR Status */
       #ocr-status { font-size: 0.85rem; color: var(--diff-master); font-weight: bold; margin-bottom: 10px; min-height: 1.2em; display: flex; align-items: center; gap: 6px; }
       #ocr-status.error { color: #dc3545; }
@@ -122,6 +126,11 @@
           <label>画像ファイル</label>
           <input type="file" id="up-file" accept="image/*">
         </div>
+
+        <div class="preview-container" id="preview-box">
+          <img id="preview-img" alt="プレビュー">
+        </div>
+
         <div class="form-group">
           <label>曲名 (タイトル)</label>
           <input type="text" id="up-title" placeholder="画像から自動入力されます">
@@ -343,7 +352,6 @@
           // 1. ルートフォルダ特定
           const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
           if (!rootFolder) {
-            // データが無い場合でも空表示にする（アップロードでフォルダを作るためエラーにはしない）
             allRecords = [];
             onDataLoaded();
             return;
@@ -461,7 +469,6 @@
         const existing = await getFolderByName(name, parentId);
         if (existing) return existing;
 
-        // 作成
         const fileMetadata = {
           'name': name,
           'mimeType': 'application/vnd.google-apps.folder'
@@ -482,7 +489,7 @@
         });
       }
 
-      // --- Upload Logic ---
+      // --- Upload & Preview & OCR Logic ---
 
       function openUploadModal() {
         document.getElementById('uploadModal').style.display = 'flex';
@@ -493,18 +500,30 @@
         document.getElementById('up-miss').value = "0";
         document.getElementById('ocr-status').innerText = "";
         document.getElementById('ocr-status').className = "";
+        document.getElementById('preview-box').style.display = "none";
+        document.getElementById('preview-img').src = "";
       }
 
       function closeUploadModal() {
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // --- OCR Logic ---
-      
+      // ファイル選択時のイベントリスナー
       document.getElementById('up-file').addEventListener('change', async function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
 
         const file = e.target.files[0];
+        
+        // プレビュー表示
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = document.getElementById('preview-img');
+          img.src = evt.target.result;
+          document.getElementById('preview-box').style.display = "block";
+        };
+        reader.readAsDataURL(file);
+
+        // OCR処理開始
         const statusDiv = document.getElementById('ocr-status');
         const submitBtn = document.getElementById('btn-submit-upload');
         
@@ -513,71 +532,91 @@
         submitBtn.disabled = true;
 
         try {
-          // Tesseract.js によるOCR実行 (日本語 + 英語)
           const worker = await Tesseract.createWorker('jpn+eng');
           const ret = await worker.recognize(file);
           await worker.terminate();
 
           const text = ret.data.text;
-          console.log("OCR Result:", text); // デバッグ用
+          console.log("OCR Raw Text:", text); // デバッグ用
 
-          // --- 情報抽出ロジック ---
-          
-          // 1. 難易度 (MASTER, APPEND, EXPERT, HARD)
+          // --- 1. 難易度解析 ---
           const diffMatch = text.match(/(APPEND|MASTER|EXPERT|HARD)/i);
+          let detectedDiff = "";
           if (diffMatch) {
              const d = diffMatch[1].toUpperCase();
              const map = { 'APPEND':'A', 'MASTER':'M', 'EXPERT':'E', 'HARD':'H' };
-             if (map[d]) document.getElementById('up-diff').value = map[d];
+             if (map[d]) {
+               detectedDiff = map[d];
+               document.getElementById('up-diff').value = detectedDiff;
+             }
           }
 
-          // 2. レベル (Lv.35 など)
-          // 誤検知対策: "Lv." の後に続く数字を取得
-          const levelMatch = text.match(/(?:楽曲)?Lv\.?\s*(\d+)/i);
+          // --- 2. レベル解析 (改善版) ---
+          // "Lv.35", "Lv35", "LEVEL 35" などを検索
+          // OCR誤検知対策: 楽曲Lvが読めない場合、難易度の近くにある数字(20~40)を拾う
+          let levelFound = null;
+          
+          // パターンA: 明示的なLv表記
+          const levelMatch = text.match(/(?:Lv\.?|LEVEL)\s*(\d+)/i);
           if (levelMatch) {
-            document.getElementById('up-level').value = levelMatch[1];
+            levelFound = levelMatch[1];
+          } 
+          // パターンB: 難易度名の直後に数字がある場合 (例: MASTER 33)
+          else if (diffMatch) {
+             // 難易度の文字列の後ろにある数字を探す正規表現
+             const regexDiffNum = new RegExp(diffMatch[1] + "[^0-9\n]*(\\d+)", "i");
+             const diffNumMatch = text.match(regexDiffNum);
+             if (diffNumMatch && parseInt(diffNumMatch[1]) > 10) {
+                levelFound = diffNumMatch[1];
+             }
           }
 
-          // 3. ミス数計算 (GOOD + BAD + MISS)
-          // OCRは数字の間にスペースを入れることがあるため除去してパース
-          const extractCount = (label) => {
-             // "GOOD"の後に来る数字以外の文字をスキップして数字の塊を取得
-             const regex = new RegExp(label + "[^0-9]*([0-9\\s]+)", "i");
+          // パターンC: 単独の数字でそれっぽいもの (25~38: Master/Append帯)
+          if (!levelFound) {
+             const likelyNums = text.match(/\b([23][0-9])\b/g); // 20-39
+             if (likelyNums && likelyNums.length === 1) {
+                // 候補が1つしかなければそれを採用
+                levelFound = likelyNums[0];
+             }
+          }
+
+          if (levelFound) {
+            document.getElementById('up-level').value = levelFound;
+          }
+
+          // --- 3. ミス数解析 (GOOD/BAD/MISS) 改善版 ---
+          // 右側のCOMBOやFAST/LATEの数字を拾わないように、ラベルの直後の数字のみを厳密に取得する
+          
+          const extractSpecificCount = (label) => {
+             // ラベル(GOODなど)の後、数字以外の文字(スペースや記号)があり、その後の数字を取得
+             // ただし改行(\n)が来る前までの数字に限る。これにより右側の別項目の数字混入を防ぐ(行単位解析に近い挙動)
+             const regex = new RegExp(label + "[^0-9\n]*([0-9oO]+)", "i");
              const m = text.match(regex);
              if (m) {
-               // 全角数字やスペースを除去
-               const cleanNum = m[1].replace(/\s/g, '').replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-               return parseInt(cleanNum, 10) || 0;
+               // OCR特有の誤字修正 ('O' -> '0')
+               let numStr = m[1].replace(/[oO]/g, '0');
+               return parseInt(numStr, 10) || 0;
              }
              return 0;
           };
 
-          const countGood = extractCount("GOOD");
-          const countBad = extractCount("BAD");
-          const countMiss = extractCount("MISS");
+          const countGood = extractSpecificCount("GOOD");
+          const countBad = extractSpecificCount("BAD");
+          const countMiss = extractSpecificCount("MISS");
           
-          // ミス数の合計を入力
           const totalMiss = countGood + countBad + countMiss;
           document.getElementById('up-miss').value = totalMiss;
 
-          // 4. 曲名 (タイトル)
-          // タイトルは難易度/Lv表記の「前」にあることが多い
-          // 例: "怪獣になりたい MASTER Lv.35"
-          // 改行が含まれる場合もあるため、Lv表記の直前行または直前文字列を探す
+          // --- 4. 曲名解析 ---
           let title = "";
-          
-          // 戦略: "Lv." または 難易度表記がある位置を探し、それより前のテキストを取得する
-          // 日本語を含む行を探す単純なアプローチ
           const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
           
-          // 難易度またはLvが含まれる行のインデックスを探す
-          const headerIndex = lines.findIndex(l => /Lv\.|APPEND|MASTER|EXPERT|HARD/i.test(l));
+          // Lv.や難易度表記がある行を探す
+          const headerIndex = lines.findIndex(l => /(?:Lv\.|APPEND|MASTER|EXPERT|HARD)/i.test(l));
           
           if (headerIndex !== -1) {
-            // 見つかった行自体にタイトルが含まれているか (例: Title MASTER Lv.35)
             const headerLine = lines[headerIndex];
-            
-            // 難易度キーワードより前の文字を取り出す
+            // 同じ行にタイトルがあるか試す (難易度より前の文字)
             const splitMatch = headerLine.match(/^(.*?)[\s\t]+(?:APPEND|MASTER|EXPERT|HARD)/i);
             if (splitMatch && splitMatch[1].trim().length > 1) {
                title = splitMatch[1].trim();
@@ -586,14 +625,9 @@
                title = lines[headerIndex - 1];
             }
           }
-
-          // タイトルが取れなかった場合のフォールバック（最初の空でない行など）
           if (!title && lines.length > 0) {
-             // ジャケット写真の文字などが混ざるため確度は低いが、とりあえず候補を入れる
-             title = lines[0]; 
+             title = lines[0]; // フォールバック
           }
-
-          // 不要な記号の除去など
           if (title) {
             document.getElementById('up-title').value = title;
           }
@@ -628,21 +662,13 @@
         btn.innerText = "送信中...";
 
         try {
-          // 1. ルートフォルダ "プロセカリザルト" を確保
           const rootFolder = await findOrCreateFolder("プロセカリザルト");
-          
-          // 2. サブフォルダ "FC" を確保 (読み込みロジックとの互換性のため)
           const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
-
-          // 3. 楽曲フォルダ "[Lv][Diff] [Title]" を確保
-          // 命名ルール: 楽曲レベル楽曲難易度 楽曲タイトル (例: 34A ヒバナ)
           const songFolderName = `${level}${diff} ${title}`;
           const songFolder = await findOrCreateFolder(songFolderName, fcFolder.id);
 
-          // 4. ファイル名決定: FC-〇 または FC (0の場合)
           const fileName = (parseInt(miss) === 0) ? "FC" : `FC-${miss}`;
 
-          // 5. 画像アップロード (Multipart upload)
           const metadata = {
             'name': fileName,
             'parents': [songFolder.id]
@@ -664,7 +690,7 @@
 
           alert("アップロードが完了しました！");
           closeUploadModal();
-          await fetchDataFromDrive(); // データ再読み込み
+          await fetchDataFromDrive();
 
         } catch (e) {
           console.error(e);
@@ -678,14 +704,12 @@
       // --- Deletion Logic ---
 
       async function confirmDelete(fileId, title) {
-        // イベント伝播でモーダルが開かないようにする
         event.stopPropagation();
-        
         if (confirm(`「${title}」のリザルト画像を削除しますか？\n（Google Driveのゴミ箱に移動します）`)) {
           const loader = document.getElementById('loader');
           loader.style.display = 'flex';
           document.getElementById('loader-text').innerText = '削除中...';
-          document.getElementById('grid').innerHTML = ''; // 一時クリア
+          document.getElementById('grid').innerHTML = ''; 
 
           try {
             await deleteFile(fileId);
