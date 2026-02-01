@@ -508,143 +508,145 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // ファイル選択時のイベントリスナー (OCRロジック改善版)
+      // 画像の一部を切り抜いてBlobを返す関数
+      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio) {
+        const canvas = document.createElement('canvas');
+        const w = imageElement.naturalWidth;
+        const h = imageElement.naturalHeight;
+        
+        canvas.width = w * wRatio;
+        canvas.height = h * hRatio;
+        
+        const ctx = canvas.getContext('2d');
+        // sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
+        ctx.drawImage(
+          imageElement, 
+          w * xRatio, h * yRatio, w * wRatio, h * hRatio, 
+          0, 0, canvas.width, canvas.height
+        );
+        
+        return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      }
+
       document.getElementById('up-file').addEventListener('change', async function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
 
         const file = e.target.files[0];
+        const statusDiv = document.getElementById('ocr-status');
+        const submitBtn = document.getElementById('btn-submit-upload');
+        const previewImg = document.getElementById('preview-img');
         
         // プレビュー表示
         const reader = new FileReader();
         reader.onload = function(evt) {
-          const img = document.getElementById('preview-img');
-          img.src = evt.target.result;
+          previewImg.src = evt.target.result;
           document.getElementById('preview-box').style.display = "block";
         };
         reader.readAsDataURL(file);
 
-        // OCR処理開始
-        const statusDiv = document.getElementById('ocr-status');
-        const submitBtn = document.getElementById('btn-submit-upload');
-        
+        // OCR処理準備
         statusDiv.innerHTML = '<span class="spinner" style="width:16px; height:16px; border-width:2px; margin-bottom:0; display:inline-block; vertical-align:middle;"></span> 画像を解析中... (OCR)';
         statusDiv.className = "";
         submitBtn.disabled = true;
 
-        try {
-          const worker = await Tesseract.createWorker('jpn+eng');
-          const ret = await worker.recognize(file);
-          await worker.terminate();
+        // 画像のロード完了を待ってから切り抜き処理を行う
+        const imgForCrop = new Image();
+        imgForCrop.onload = async function() {
+          try {
+            const worker = await Tesseract.createWorker('jpn+eng');
 
-          const rawText = ret.data.text;
-          console.log("OCR Raw Text:", rawText); 
+            // --- 1. 右上エリア (難易度・レベル) ---
+            // 上部0~30%, 左55%~100% の範囲を想定
+            const diffBlob = await cropImage(imgForCrop, 0.55, 0.0, 0.45, 0.3);
+            const diffRet = await worker.recognize(diffBlob);
+            const diffText = diffRet.data.text.toUpperCase();
+            console.log("[OCR] Diff Area:", diffText);
 
-          // --- 解析ロジック ---
-          // プロセカリザルト画面特有の表記ゆれや配置に対応
+            // 難易度判定
+            let diffCode = null;
+            if (diffText.includes("APPEND")) diffCode = "A";
+            else if (diffText.includes("MASTER")) diffCode = "M";
+            else if (diffText.includes("EXPERT")) diffCode = "E";
+            else if (diffText.includes("HARD")) diffCode = "H";
+            if (diffCode) document.getElementById('up-diff').value = diffCode;
 
-          // 1. 難易度解析
-          // 特定のキーワードが含まれているかを最優先でチェック
-          const upperText = rawText.toUpperCase();
-          let diffCode = null;
-
-          if (upperText.includes("APPEND")) diffCode = "A";
-          else if (upperText.includes("MASTER")) diffCode = "M";
-          else if (upperText.includes("EXPERT")) diffCode = "E";
-          else if (upperText.includes("HARD")) diffCode = "H";
-
-          if (diffCode) {
-            document.getElementById('up-diff').value = diffCode;
-          }
-
-          // 2. レベル解析
-          // 表記パターン: "楽曲Lv.35", "楽曲Lv.APD34", "Lv.35", "LEVEL 35"
-          // 特に「楽曲Lv.APD34」のように間に難易度略称が入るケースに対応
-          let levelFound = null;
-          
-          // 正規表現: 
-          // 楽曲(任意) + Lv(またはLEVEL) + ピリオド(任意) + 英語文字列(任意, APDなど) + 数字
-          const levelRegex = /(?:楽曲)?(?:Lv\.?|LEVEL)\s*(?:[A-Z]+)?\s*(\d+)/i;
-          const levelMatch = rawText.match(levelRegex);
-
-          if (levelMatch && levelMatch[1]) {
-            levelFound = levelMatch[1];
-          } 
-          
-          // バックアップ: 見つからない場合、難易度キーワード近くの数字を探す
-          if (!levelFound) {
-             const diffRegex = /(?:APPEND|MASTER|EXPERT|HARD)[^0-9\n]*(\d{2})/i;
-             const m = rawText.match(diffRegex);
-             if (m && m[1]) levelFound = m[1];
-          }
-
-          if (levelFound) {
-            document.getElementById('up-level').value = levelFound;
-          }
-
-          // 3. ミス数解析 (GOOD + BAD + MISS)
-          // Tesseractは数字の0をOと誤認しやすいので置換
-          const cleanText = rawText.replace(/O/g, '0').replace(/o/g, '0');
-          
-          const extractCount = (label) => {
-             // ラベル + 数字以外の文字(空白など) + 数字
-             const regex = new RegExp(label + "\\s*[^0-9\\n]*\\s*(\\d+)", "i");
-             const m = cleanText.match(regex);
-             return m ? parseInt(m[1], 10) : 0;
-          };
-
-          const countGood = extractCount("GOOD");
-          const countBad = extractCount("BAD");
-          const countMiss = extractCount("MISS");
-          
-          const totalMiss = countGood + countBad + countMiss;
-          document.getElementById('up-miss').value = totalMiss;
-
-          // 4. 曲名解析
-          // 難易度やLv表記がある行より「前」にある有意な行をタイトルと推測する
-          let title = "";
-          const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-          
-          // Lv.や難易度表記がある行のインデックスを探す
-          const headerIndex = lines.findIndex(l => 
-            /(?:Lv\.|APPEND|MASTER|EXPERT|HARD)/i.test(l)
-          );
-          
-          if (headerIndex !== -1) {
-            // 見つかった行自体にタイトルが含まれているか確認 (例: "曲名 MASTER Lv.30")
-            // キーワードより前の部分を取得
-            const headerLine = lines[headerIndex];
-            const splitMatch = headerLine.match(/^(.*?)[\s\t]+(?:楽曲)?(?:Lv|APPEND|MASTER|EXPERT|HARD)/i);
-            
-            if (splitMatch && splitMatch[1].trim().length > 1) {
-               title = splitMatch[1].trim();
-            } else if (headerIndex > 0) {
-               // 前の行をタイトルとする
-               title = lines[headerIndex - 1];
+            // レベル判定 (APD 34 や Lv.35 に対応)
+            // 右上エリアなので、2桁の数字(20~40程度)が見つかればそれがレベルである可能性が高い
+            let levelFound = null;
+            const levelMatch = diffText.match(/(\d{2})/g);
+            if (levelMatch) {
+              // 20～40の範囲の数字を優先
+              const validLevels = levelMatch.map(n => parseInt(n)).filter(n => n >= 20 && n <= 40);
+              if (validLevels.length > 0) {
+                levelFound = validLevels[0]; // 最初に見つかったものを採用
+              }
             }
-          }
-          
-          // それでも見つからなければ最初の行
-          if (!title && lines.length > 0) {
-             // ただし、スコアのリザルト表示(SCOREやCLEARなど)でないことを確認
-             if (!/CLEAR|RESULT|SCORE/i.test(lines[0])) {
-                title = lines[0];
-             }
-          }
-          
-          if (title) {
-            document.getElementById('up-title').value = title;
-          }
+            if (levelFound) document.getElementById('up-level').value = levelFound;
 
-          statusDiv.innerText = `解析完了: レベル${levelFound || '?'} / Miss=${totalMiss} (G:${countGood}, B:${countBad}, M:${countMiss})`;
-          statusDiv.style.color = "#28a745";
 
-        } catch (err) {
-          console.error(err);
-          statusDiv.innerText = "解析に失敗しました。手動で入力してください。";
-          statusDiv.className = "error";
-        } finally {
-          submitBtn.disabled = false;
-        }
+            // --- 2. 右下エリア (スコア・判定) ---
+            // 下部40%~100%, 左50%~100% の範囲を想定
+            const scoreBlob = await cropImage(imgForCrop, 0.5, 0.4, 0.5, 0.6);
+            const scoreRet = await worker.recognize(scoreBlob);
+            const scoreText = scoreRet.data.text.replace(/O/g, '0').replace(/o/g, '0'); // ゼロ誤認修正
+            console.log("[OCR] Score Area:", scoreText);
+
+            // GOOD/BAD/MISS の数値取得
+            const extractCount = (label) => {
+               // 行ごとの処理に変更 (例: "GOOD 5")
+               const lines = scoreText.split('\n');
+               for (let line of lines) {
+                 if (line.toUpperCase().includes(label)) {
+                   // ラベルの後ろにある数字を探す
+                   const m = line.match(/\d+/);
+                   if (m) return parseInt(m[0], 10);
+                 }
+               }
+               return 0;
+            };
+
+            const countGood = extractCount("GOOD");
+            const countBad = extractCount("BAD");
+            const countMiss = extractCount("MISS");
+            const totalMiss = countGood + countBad + countMiss;
+            document.getElementById('up-miss').value = totalMiss;
+
+
+            // --- 3. 左上エリア (曲名) ---
+            // 上部0~25%, 左0%~70% の範囲を想定 (難易度表示に被らないように)
+            const titleBlob = await cropImage(imgForCrop, 0.0, 0.0, 0.7, 0.25);
+            const titleRet = await worker.recognize(titleBlob);
+            const titleText = titleRet.data.text;
+            console.log("[OCR] Title Area:", titleText);
+
+            // 曲名取得: 空白行を除去し、一番文字数が多そうな行、あるいは最初の行を採用
+            const titleLines = titleText.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+            if (titleLines.length > 0) {
+              // スコアなどのゴミが入っていないか簡易チェック
+              const likelyTitle = titleLines.find(l => !/CLEAR|RANK|SCORE/i.test(l));
+              if (likelyTitle) {
+                document.getElementById('up-title').value = likelyTitle;
+              } else {
+                document.getElementById('up-title').value = titleLines[0];
+              }
+            }
+
+            await worker.terminate();
+
+            statusDiv.innerText = `解析完了: Miss=${totalMiss} (G:${countGood}, B:${countBad}, M:${countMiss})`;
+            statusDiv.style.color = "#28a745";
+
+          } catch (err) {
+            console.error(err);
+            statusDiv.innerText = "解析に失敗しました。";
+            statusDiv.className = "error";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        };
+
+        // 画像ソースを設定してロード開始
+        imgForCrop.src = URL.createObjectURL(file);
       });
 
       async function handleUpload() {
