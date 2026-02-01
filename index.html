@@ -528,16 +528,23 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // 画像の一部を切り抜いてBlobを返す関数
-      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio) {
+      // 画像切り抜き + 前処理（コントラスト強化）
+      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, highContrast = false) {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
         const h = imageElement.naturalHeight;
         
+        // 切り抜きサイズ
         canvas.width = w * wRatio;
         canvas.height = h * hRatio;
         
         const ctx = canvas.getContext('2d');
+        
+        // 画像処理：コントラストを上げてOCR精度を高める
+        if (highContrast) {
+          ctx.filter = 'grayscale(100%) contrast(200%) invert(0)';
+        }
+
         // sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
         ctx.drawImage(
           imageElement, 
@@ -580,10 +587,10 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height); // リセット
             
-            // 描画ヘルパー: x,y,w,hは比率(0.0~1.0)
+            // 描画ヘルパー
             const drawDebugRect = (xR, yR, wR, hR, color) => {
                ctx.strokeStyle = color;
-               ctx.lineWidth = Math.max(2, imgForCrop.naturalWidth * 0.005); // 画像サイズに合わせて線の太さを調整
+               ctx.lineWidth = Math.max(3, imgForCrop.naturalWidth * 0.005);
                ctx.strokeRect(
                  imgForCrop.naturalWidth * xR, 
                  imgForCrop.naturalHeight * yR, 
@@ -594,86 +601,104 @@
 
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 1. 難易度・レベル (赤枠: タイトル下) ---
-            // ジャケットの右横、タイトルの下あたり
-            const r1 = {x:0.17, y:0.09, w:0.25, h:0.08}; 
-            drawDebugRect(r1.x, r1.y, r1.w, r1.h, "red");
-            
-            const diffBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h);
-            const diffRet = await worker.recognize(diffBlob);
-            const diffText = diffRet.data.text.toUpperCase();
-            console.log("[OCR] Diff Area:", diffText);
+            // --- 1. 左上エリア (曲名・難易度・レベル) ---
+            // 画面比率が変わっても左上に固定されるため、広めに取る
+            // x:0, y:0 から幅50%, 高さ30%の範囲を検索
+            const r1 = {x:0.0, y:0.0, w:0.5, h:0.3};
+            drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
-            // 難易度判定
+            // タイトルなどの部分は白文字が多いため、コントラスト強化(highContrast=true)を使う
+            const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, true);
+            const headerRet = await worker.recognize(headerBlob);
+            const headerText = headerRet.data.text;
+            console.log("[OCR] Header Area:\n", headerText);
+
+            // 解析: 曲名
+            const lines = headerText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            // "Lv."や"APPEND"などが含まれない行をタイトル候補とする
+            const titleCandidates = lines.filter(l => !/(APPEND|MASTER|EXPERT|HARD|Lv|SCORE|RANK|CLEAR)/i.test(l));
+            if (titleCandidates.length > 0) {
+              document.getElementById('up-title').value = titleCandidates[0];
+            }
+
+            // 解析: 難易度 & レベル
+            // 大文字にして検索
+            const upperHeader = headerText.toUpperCase();
+            
             let diffCode = null;
-            if (diffText.includes("APPEND")) diffCode = "A";
-            else if (diffText.includes("MASTER")) diffCode = "M";
-            else if (diffText.includes("EXPERT")) diffCode = "E";
-            else if (diffText.includes("HARD")) diffCode = "H";
+            if (upperHeader.includes("APPEND")) diffCode = "A";
+            else if (upperHeader.includes("MASTER")) diffCode = "M";
+            else if (upperHeader.includes("EXPERT")) diffCode = "E";
+            else if (upperHeader.includes("HARD")) diffCode = "H";
             if (diffCode) document.getElementById('up-diff').value = diffCode;
 
-            // レベル判定
-            let levelFound = null;
-            const levelMatch = diffText.match(/(\d{2})/g);
+            // "Lv.30" や "30" を探す (20-40の範囲)
+            // 誤認識防止のため "Lv" の近くにある数字や、行単独の数字を優先したいが、まずは単純抽出
+            const levelMatch = upperHeader.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/g);
             if (levelMatch) {
-              const validLevels = levelMatch.map(n => parseInt(n)).filter(n => n >= 20 && n <= 40);
+              // 抽出された2桁数字のうち、20〜40のもの有効とする
+              const validLevels = [];
+              for(let m of levelMatch) {
+                const num = parseInt(m.replace(/[^\d]/g, ''), 10);
+                if (num >= 20 && num <= 40) validLevels.push(num);
+              }
               if (validLevels.length > 0) {
-                levelFound = validLevels[0];
+                // 難易度表記の近くにある可能性が高いので、最後のほうを採用してみる（タイトルに数字がある場合への対策）
+                document.getElementById('up-level').value = validLevels[validLevels.length - 1];
               }
             }
-            if (levelFound) document.getElementById('up-level').value = levelFound;
 
 
-            // --- 2. スコア・判定 (緑枠: 左下詳細) ---
-            // 画面左下のリスト部分 (Perfect~Miss)
-            const r2 = {x:0.11, y:0.54, w:0.24, h:0.35};
-            drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00"); // 鮮やかな緑
+            // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
+            // 縦に長いリストなので、左側の広い範囲(下半分)を取る
+            // x:0.02, y:0.4 から幅35%, 高さ50%
+            const r2 = {x:0.02, y:0.4, w:0.35, h:0.55};
+            drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
-            const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h);
+            const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true);
             const scoreRet = await worker.recognize(scoreBlob);
-            const scoreText = scoreRet.data.text.replace(/O/g, '0').replace(/o/g, '0');
-            console.log("[OCR] Score Area:", scoreText);
+            const scoreText = scoreRet.data.text;
+            console.log("[OCR] Score Area:\n", scoreText);
 
-            // GOOD/BAD/MISS の数値取得
-            const extractCount = (label) => {
-               const lines = scoreText.split('\n');
-               for (let line of lines) {
-                 if (line.toUpperCase().includes(label)) {
-                   const m = line.match(/\d+/);
-                   if (m) return parseInt(m[0], 10);
-                 }
-               }
-               return 0;
+            // スコア解析ロジック改善
+            // 行ごとに分割し、キーワードを探す。
+            // "GOOD"はOCRで "G00D", "GO0D", "600D" などになりやすいので正規表現でカバー
+            const scoreLines = scoreText.split('\n');
+            
+            let countGood = 0;
+            let countBad = 0;
+            let countMiss = 0;
+
+            const parseCountFromLine = (line, regex) => {
+              if (regex.test(line)) {
+                // 数字だけ抽出
+                const nums = line.match(/\d+/g);
+                if (nums && nums.length > 0) {
+                  // 行の最後の数字がカウント値であることが多い ("GOOD 1" のような形式)
+                  return parseInt(nums[nums.length - 1], 10);
+                }
+              }
+              return 0;
             };
 
-            const countGood = extractCount("GOOD");
-            const countBad = extractCount("BAD");
-            const countMiss = extractCount("MISS");
+            // GOOD (G00D, G0OD, etc.)
+            // パターン: G + (Oか0かQかD)が2つ + D
+            const regGood = /G[O0QD]{2}D/i; 
+            const regBad  = /BAD/i;
+            const regMiss = /MISS/i;
+
+            scoreLines.forEach(line => {
+              if (regGood.test(line)) countGood = parseCountFromLine(line, regGood);
+              if (regBad.test(line))  countBad  = parseCountFromLine(line, regBad);
+              if (regMiss.test(line)) countMiss = parseCountFromLine(line, regMiss);
+            });
+
+            // もし上記で見つからない場合、"PERFECT"の下にある数字の並びとして推測する等のロジックも考えられるが、
+            // まずはキーワード検索の強化で対応。
+            
             const totalMiss = countGood + countBad + countMiss;
             document.getElementById('up-miss').value = totalMiss;
-
-
-            // --- 3. 曲名 (青枠: 左上タイトルバー) ---
-            // ジャケットの右横、一番上の行
-            const r3 = {x:0.17, y:0.02, w:0.45, h:0.07};
-            drawDebugRect(r3.x, r3.y, r3.w, r3.h, "blue");
-
-            const titleBlob = await cropImage(imgForCrop, r3.x, r3.y, r3.w, r3.h);
-            const titleRet = await worker.recognize(titleBlob);
-            const titleText = titleRet.data.text;
-            console.log("[OCR] Title Area:", titleText);
-
-            // 曲名取得
-            const titleLines = titleText.split('\n').map(l => l.trim()).filter(l => l.length > 1);
-            if (titleLines.length > 0) {
-              const likelyTitle = titleLines.find(l => !/CLEAR|RANK|SCORE/i.test(l));
-              if (likelyTitle) {
-                document.getElementById('up-title').value = likelyTitle;
-              } else {
-                document.getElementById('up-title').value = titleLines[0];
-              }
-            }
-
+            
             await worker.terminate();
 
             statusDiv.innerText = `解析完了: Miss=${totalMiss} (G:${countGood}, B:${countBad}, M:${countMiss})`;
