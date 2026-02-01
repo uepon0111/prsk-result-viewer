@@ -95,6 +95,9 @@
       
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
+
+      /* OCR Loading Overlay within Upload Modal */
+      #ocr-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); z-index: 10; border-radius: 12px; align-items: center; justify-content: center; flex-direction: column; font-weight: bold; color: var(--diff-master); }
     </style>
   </head>
   <body>
@@ -106,17 +109,22 @@
 
     <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
       <div class="modal-form-content">
+        <div id="ocr-overlay">
+          <div class="spinner"></div>
+          <div>画像を解析して自動入力中...</div>
+        </div>
+
         <div class="modal-header">
           <span><span class="material-symbols-outlined">cloud_upload</span> リザルトアップロード</span>
           <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
         </div>
         <div class="form-group">
-          <label>画像ファイル</label>
-          <input type="file" id="up-file" accept="image/*">
+          <label>画像ファイル (選択すると自動解析)</label>
+          <input type="file" id="up-file" accept="image/*" onchange="handleFileSelect(this)">
         </div>
         <div class="form-group">
           <label>曲名 (タイトル)</label>
-          <input type="text" id="up-title" placeholder="">
+          <input type="text" id="up-title" placeholder="自動入力または手動入力">
         </div>
         <div style="display:flex; gap:10px;">
           <div class="form-group" style="flex:1;">
@@ -134,7 +142,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label>ミス数 (FCの場合は0)</label>
+          <label>ミス数 (GOOD + BAD + MISS)</label>
           <input type="number" id="up-miss" value="0" min="0">
         </div>
         <div class="form-actions">
@@ -246,7 +254,6 @@
       // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-      // 変更: アップロードと削除のために権限を強化 (drive.readonly -> drive)
       const SCOPES = 'https://www.googleapis.com/auth/drive';
 
       let tokenClient;
@@ -321,6 +328,138 @@
         document.getElementById('auth-status').innerText = isLoggedIn ? 'ログイン済み' : '未ログイン';
       }
 
+      // --- OCR Feature Implementation (Cloud Vision API) ---
+      
+      async function handleFileSelect(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+
+        // UI: ローディング表示
+        document.getElementById('ocr-overlay').style.display = 'flex';
+
+        try {
+          // 1. Base64変換
+          const base64Data = await readFileAsBase64(file);
+          
+          // 2. Cloud Vision API コール
+          // 注意: APIキーの「Cloud Vision API」が有効になっている必要があります
+          const visionUrl = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+          const requestBody = {
+            requests: [
+              {
+                image: { content: base64Data },
+                features: [{ type: "TEXT_DETECTION" }]
+              }
+            ]
+          };
+
+          const response = await fetch(visionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          const data = await response.json();
+          if (!data.responses || !data.responses[0].fullTextAnnotation) {
+            throw new Error("文字を検出できませんでした。");
+          }
+
+          const fullText = data.responses[0].fullTextAnnotation.text;
+          console.log("OCR Result:", fullText); // デバッグ用
+
+          // 3. 解析と自動入力
+          parseAndFillForm(fullText);
+
+        } catch (error) {
+          console.error("OCR Error:", error);
+          alert("自動入力に失敗しました。手動で入力してください。\n(GCPコンソールでCloud Vision APIが有効か確認してください)");
+        } finally {
+          document.getElementById('ocr-overlay').style.display = 'none';
+        }
+      }
+
+      function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            // "data:image/png;base64,..." のカンマ以降を取得
+            const base64 = result.split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function parseAndFillForm(text) {
+        // --- 1. ミス数 (GOOD + BAD + MISS) ---
+        // プロセカのリザルトは "GOOD 0009" のように改行やスペースが入る
+        // OCR結果例: "GOOD\n0009" または "GOOD 9"
+        
+        const getCount = (label) => {
+          // labelの後に来る数字を探す (間に改行やスペースがあってもOK)
+          const regex = new RegExp(`${label}\\s*\\n?\\s*(\\d+)`, 'i');
+          const match = text.match(regex);
+          return match ? parseInt(match[1], 10) : 0;
+        };
+
+        const good = getCount("GOOD");
+        const bad = getCount("BAD");
+        const miss = getCount("MISS");
+        const totalMiss = good + bad + miss;
+
+        document.getElementById('up-miss').value = totalMiss;
+
+        // --- 2. 難易度 (MASTER, APPEND, etc) ---
+        let detectedDiff = null;
+        if (text.includes("APPEND")) detectedDiff = "A";
+        else if (text.includes("MASTER")) detectedDiff = "M";
+        else if (text.includes("EXPERT")) detectedDiff = "E";
+        else if (text.includes("HARD")) detectedDiff = "H";
+
+        if (detectedDiff) {
+          document.getElementById('up-diff').value = detectedDiff;
+        }
+
+        // --- 3. レベル (Lv.35) ---
+        // "Lv. 35" や "楽曲Lv.35" を探す
+        const lvlMatch = text.match(/Lv\.\s*(\d+)/i);
+        if (lvlMatch) {
+          document.getElementById('up-level').value = lvlMatch[1];
+        }
+
+        // --- 4. 曲名 (簡易推測) ---
+        // リザルト画面で特徴的な単語を除外し、最初の方にある長い文字列をタイトルと推測する
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const ignoreWords = [
+          "RESULT", "SCORE", "HI-SCORE", "NEW RECORD", "COMBO", 
+          "PERFECT", "GREAT", "GOOD", "BAD", "MISS", "LATE", "FAST", "FLICK",
+          "MASTER", "APPEND", "EXPERT", "HARD", "Lv.", "CLEAR", "RANK", "AP"
+        ];
+        
+        // 最初の数行から、除外ワードを含まない、ある程度長さのある行を探す
+        let candidateTitle = "";
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+          const line = lines[i];
+          // 数字だけの行や短い記号はスキップ
+          if (line.replace(/[0-9\s]/g, '').length < 2) continue;
+
+          // 除外ワードが含まれているかチェック
+          const hasIgnore = ignoreWords.some(word => line.toUpperCase().includes(word));
+          
+          if (!hasIgnore) {
+            candidateTitle = line;
+            break; 
+          }
+        }
+        
+        if (candidateTitle) {
+          document.getElementById('up-title').value = candidateTitle;
+        }
+      }
+
+
       // --- Drive データ取得ロジック ---
 
       async function fetchDataFromDrive() {
@@ -336,7 +475,6 @@
           // 1. ルートフォルダ特定
           const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
           if (!rootFolder) {
-            // データが無い場合でも空表示にする（アップロードでフォルダを作るためエラーにはしない）
             allRecords = [];
             onDataLoaded();
             return;
@@ -488,6 +626,7 @@
 
       function closeUploadModal() {
         document.getElementById('uploadModal').style.display = 'none';
+        document.getElementById('ocr-overlay').style.display = 'none';
       }
 
       async function handleUpload() {
@@ -558,14 +697,13 @@
       // --- Deletion Logic ---
 
       async function confirmDelete(fileId, title) {
-        // イベント伝播でモーダルが開かないようにする
         event.stopPropagation();
         
         if (confirm(`「${title}」のリザルト画像を削除しますか？\n（Google Driveのゴミ箱に移動します）`)) {
           const loader = document.getElementById('loader');
           loader.style.display = 'flex';
           document.getElementById('loader-text').innerText = '削除中...';
-          document.getElementById('grid').innerHTML = ''; // 一時クリア
+          document.getElementById('grid').innerHTML = ''; 
 
           try {
             await deleteFile(fileId);
