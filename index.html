@@ -489,27 +489,6 @@
         });
       }
 
-      // --- Helper: Levenshtein Distance for Similarity ---
-      function getLevenshteinDistance(a, b) {
-        const matrix = [];
-        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-        for (let i = 1; i <= b.length; i++) {
-          for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-              matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-              matrix[i][j] = Math.min(
-                matrix[i - 1][j - 1] + 1, // substitution
-                Math.min(matrix[i][j - 1] + 1, // insertion
-                matrix[i - 1][j] + 1) // deletion
-              ); 
-            }
-          }
-        }
-        return matrix[b.length][a.length];
-      }
-
       // --- Upload & Preview & OCR Logic ---
 
       function openUploadModal() {
@@ -529,7 +508,7 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // ファイル選択時のイベントリスナー
+      // ファイル選択時のイベントリスナー (OCRロジック改善版)
       document.getElementById('up-file').addEventListener('change', async function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
 
@@ -557,117 +536,106 @@
           const ret = await worker.recognize(file);
           await worker.terminate();
 
-          const text = ret.data.text;
-          console.log("OCR Raw Text:", text); // デバッグ用
+          const rawText = ret.data.text;
+          console.log("OCR Raw Text:", rawText); 
 
-          // --- 1. 難易度解析 (Levenshtein Distance) ---
-          // 完全一致ではなく、最も近い単語を探す
-          const upperText = text.toUpperCase();
-          const tokens = upperText.split(/[\s\n\t.,:\-\[\]]+/); // 単語に分割
+          // --- 解析ロジック ---
+          // プロセカリザルト画面特有の表記ゆれや配置に対応
 
-          const diffTargets = [
-            { name: 'APPEND', code: 'A' },
-            { name: 'MASTER', code: 'M' },
-            { name: 'EXPERT', code: 'E' },
-            { name: 'HARD',   code: 'H' }
-          ];
+          // 1. 難易度解析
+          // 特定のキーワードが含まれているかを最優先でチェック
+          const upperText = rawText.toUpperCase();
+          let diffCode = null;
 
-          let bestDiffCode = null;
-          let bestDiffDist = 3; // 許容する最大誤差（これより小さい距離のものを採用）
+          if (upperText.includes("APPEND")) diffCode = "A";
+          else if (upperText.includes("MASTER")) diffCode = "M";
+          else if (upperText.includes("EXPERT")) diffCode = "E";
+          else if (upperText.includes("HARD")) diffCode = "H";
 
-          tokens.forEach(token => {
-            // 短すぎる単語はノイズの可能性が高いので無視 (難易度は最短でもHARDの4文字)
-            if (token.length < 3) return;
-
-            diffTargets.forEach(tgt => {
-              const dist = getLevenshteinDistance(token, tgt.name);
-              // より距離が近い(似ている)ものが見つかれば更新
-              if (dist < bestDiffDist) {
-                bestDiffDist = dist;
-                bestDiffCode = tgt.code;
-              }
-            });
-          });
-
-          if (bestDiffCode) {
-            document.getElementById('up-diff').value = bestDiffCode;
+          if (diffCode) {
+            document.getElementById('up-diff').value = diffCode;
           }
 
-          // --- 2. レベル解析 (改善版) ---
+          // 2. レベル解析
+          // 表記パターン: "楽曲Lv.35", "楽曲Lv.APD34", "Lv.35", "LEVEL 35"
+          // 特に「楽曲Lv.APD34」のように間に難易度略称が入るケースに対応
           let levelFound = null;
           
-          // パターンA: 明示的なLv表記
-          const levelMatch = text.match(/(?:Lv\.?|LEVEL)\s*(\d+)/i);
-          if (levelMatch) {
+          // 正規表現: 
+          // 楽曲(任意) + Lv(またはLEVEL) + ピリオド(任意) + 英語文字列(任意, APDなど) + 数字
+          const levelRegex = /(?:楽曲)?(?:Lv\.?|LEVEL)\s*(?:[A-Z]+)?\s*(\d+)/i;
+          const levelMatch = rawText.match(levelRegex);
+
+          if (levelMatch && levelMatch[1]) {
             levelFound = levelMatch[1];
           } 
-          // パターンB: 難易度(と思われる単語)の直後に数字がある場合
-          // OCRで難易度文字列が多少崩れていても、それっぽい大文字の塊の後ろの数字を探す
-          else {
-             // 簡易的にMASTER等の頭文字付近を探す
-             const diffNumMatch = text.match(/(?:MASTER|EXPERT|HARD|APPEND)[^0-9\n]*(\d+)/i);
-             if (diffNumMatch && parseInt(diffNumMatch[1]) > 10) {
-               levelFound = diffNumMatch[1];
-             }
-          }
-
-          // パターンC: 単独の数字でそれっぽいもの (20~38)
+          
+          // バックアップ: 見つからない場合、難易度キーワード近くの数字を探す
           if (!levelFound) {
-             const likelyNums = text.match(/\b([23][0-9])\b/g); // 20-39
-             if (likelyNums && likelyNums.length === 1) {
-                levelFound = likelyNums[0];
-             }
+             const diffRegex = /(?:APPEND|MASTER|EXPERT|HARD)[^0-9\n]*(\d{2})/i;
+             const m = rawText.match(diffRegex);
+             if (m && m[1]) levelFound = m[1];
           }
 
           if (levelFound) {
             document.getElementById('up-level').value = levelFound;
           }
 
-          // --- 3. ミス数解析 (GOOD/BAD/MISS) 改善版 ---
+          // 3. ミス数解析 (GOOD + BAD + MISS)
+          // Tesseractは数字の0をOと誤認しやすいので置換
+          const cleanText = rawText.replace(/O/g, '0').replace(/o/g, '0');
           
-          const extractSpecificCount = (label) => {
-             // ラベル(GOODなど)の後、数字以外の文字(スペースや記号)があり、その後の数字を取得
-             const regex = new RegExp(label + "[^0-9\n]*([0-9oO]+)", "i");
-             const m = text.match(regex);
-             if (m) {
-               // OCR特有の誤字修正 ('O' -> '0')
-               let numStr = m[1].replace(/[oO]/g, '0');
-               return parseInt(numStr, 10) || 0;
-             }
-             return 0;
+          const extractCount = (label) => {
+             // ラベル + 数字以外の文字(空白など) + 数字
+             const regex = new RegExp(label + "\\s*[^0-9\\n]*\\s*(\\d+)", "i");
+             const m = cleanText.match(regex);
+             return m ? parseInt(m[1], 10) : 0;
           };
 
-          const countGood = extractSpecificCount("GOOD");
-          const countBad = extractSpecificCount("BAD");
-          const countMiss = extractSpecificCount("MISS");
+          const countGood = extractCount("GOOD");
+          const countBad = extractCount("BAD");
+          const countMiss = extractCount("MISS");
           
           const totalMiss = countGood + countBad + countMiss;
           document.getElementById('up-miss').value = totalMiss;
 
-          // --- 4. 曲名解析 ---
+          // 4. 曲名解析
+          // 難易度やLv表記がある行より「前」にある有意な行をタイトルと推測する
           let title = "";
-          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+          const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
           
-          // Lv.や難易度表記がある行を探す
-          const headerIndex = lines.findIndex(l => /(?:Lv\.|APPEND|MASTER|EXPERT|HARD)/i.test(l));
+          // Lv.や難易度表記がある行のインデックスを探す
+          const headerIndex = lines.findIndex(l => 
+            /(?:Lv\.|APPEND|MASTER|EXPERT|HARD)/i.test(l)
+          );
           
           if (headerIndex !== -1) {
+            // 見つかった行自体にタイトルが含まれているか確認 (例: "曲名 MASTER Lv.30")
+            // キーワードより前の部分を取得
             const headerLine = lines[headerIndex];
-            const splitMatch = headerLine.match(/^(.*?)[\s\t]+(?:APPEND|MASTER|EXPERT|HARD)/i);
+            const splitMatch = headerLine.match(/^(.*?)[\s\t]+(?:楽曲)?(?:Lv|APPEND|MASTER|EXPERT|HARD)/i);
+            
             if (splitMatch && splitMatch[1].trim().length > 1) {
                title = splitMatch[1].trim();
             } else if (headerIndex > 0) {
+               // 前の行をタイトルとする
                title = lines[headerIndex - 1];
             }
           }
+          
+          // それでも見つからなければ最初の行
           if (!title && lines.length > 0) {
-             title = lines[0]; // フォールバック
+             // ただし、スコアのリザルト表示(SCOREやCLEARなど)でないことを確認
+             if (!/CLEAR|RESULT|SCORE/i.test(lines[0])) {
+                title = lines[0];
+             }
           }
+          
           if (title) {
             document.getElementById('up-title').value = title;
           }
 
-          statusDiv.innerText = `解析完了: Miss=${totalMiss} (Good:${countGood}, Bad:${countBad}, Miss:${countMiss})`;
+          statusDiv.innerText = `解析完了: レベル${levelFound || '?'} / Miss=${totalMiss} (G:${countGood}, B:${countBad}, M:${countMiss})`;
           statusDiv.style.color = "#28a745";
 
         } catch (err) {
