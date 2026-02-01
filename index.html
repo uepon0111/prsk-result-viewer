@@ -94,9 +94,21 @@
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
       
-      /* Image Preview */
-      .preview-container { text-align: center; margin-bottom: 15px; background: #f0f0f0; border-radius: 8px; overflow: hidden; display: none; }
-      #preview-img { max-width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto; }
+      /* Image Preview & Overlay */
+      .preview-container { 
+        text-align: center; margin-bottom: 15px; background: #f0f0f0; border-radius: 8px; overflow: hidden; display: none; 
+      }
+      .preview-wrapper {
+        position: relative;
+        display: inline-block; /* 画像のサイズに合わせる */
+        max-width: 100%;
+      }
+      #preview-img { 
+        display: block; max-width: 100%; height: auto; 
+      }
+      #debug-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+      }
 
       /* OCR Status */
       #ocr-status { font-size: 0.85rem; color: var(--diff-master); font-weight: bold; margin-bottom: 10px; min-height: 1.2em; display: flex; align-items: center; gap: 6px; }
@@ -128,7 +140,10 @@
         </div>
 
         <div class="preview-container" id="preview-box">
-          <img id="preview-img" alt="プレビュー">
+          <div class="preview-wrapper">
+            <img id="preview-img" alt="プレビュー">
+            <canvas id="debug-overlay"></canvas>
+          </div>
         </div>
 
         <div class="form-group">
@@ -502,6 +517,11 @@
         document.getElementById('ocr-status').className = "";
         document.getElementById('preview-box').style.display = "none";
         document.getElementById('preview-img').src = "";
+        
+        // Canvasのクリア
+        const canvas = document.getElementById('debug-overlay');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
       function closeUploadModal() {
@@ -535,6 +555,7 @@
         const statusDiv = document.getElementById('ocr-status');
         const submitBtn = document.getElementById('btn-submit-upload');
         const previewImg = document.getElementById('preview-img');
+        const canvas = document.getElementById('debug-overlay');
         
         // プレビュー表示
         const reader = new FileReader();
@@ -549,15 +570,35 @@
         statusDiv.className = "";
         submitBtn.disabled = true;
 
-        // 画像のロード完了を待ってから切り抜き処理を行う
+        // 画像のロード完了を待ってから処理を行う
         const imgForCrop = new Image();
         imgForCrop.onload = async function() {
           try {
+            // Canvasのサイズを画像の天然サイズに合わせる
+            canvas.width = imgForCrop.naturalWidth;
+            canvas.height = imgForCrop.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // リセット
+            
+            // 描画ヘルパー: x,y,w,hは比率(0.0~1.0)
+            const drawDebugRect = (xR, yR, wR, hR, color) => {
+               ctx.strokeStyle = color;
+               ctx.lineWidth = Math.max(2, imgForCrop.naturalWidth * 0.005); // 画像サイズに合わせて線の太さを調整
+               ctx.strokeRect(
+                 imgForCrop.naturalWidth * xR, 
+                 imgForCrop.naturalHeight * yR, 
+                 imgForCrop.naturalWidth * wR, 
+                 imgForCrop.naturalHeight * hR
+               );
+            };
+
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 1. 右上エリア (難易度・レベル) ---
-            // 上部0~30%, 左55%~100% の範囲を想定
-            const diffBlob = await cropImage(imgForCrop, 0.55, 0.0, 0.45, 0.3);
+            // --- 1. 右上エリア (難易度・レベル) [赤枠] ---
+            const r1 = {x:0.55, y:0.0, w:0.45, h:0.3};
+            drawDebugRect(r1.x, r1.y, r1.w, r1.h, "red");
+            
+            const diffBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h);
             const diffRet = await worker.recognize(diffBlob);
             const diffText = diffRet.data.text.toUpperCase();
             console.log("[OCR] Diff Area:", diffText);
@@ -570,34 +611,32 @@
             else if (diffText.includes("HARD")) diffCode = "H";
             if (diffCode) document.getElementById('up-diff').value = diffCode;
 
-            // レベル判定 (APD 34 や Lv.35 に対応)
-            // 右上エリアなので、2桁の数字(20~40程度)が見つかればそれがレベルである可能性が高い
+            // レベル判定
             let levelFound = null;
             const levelMatch = diffText.match(/(\d{2})/g);
             if (levelMatch) {
-              // 20～40の範囲の数字を優先
               const validLevels = levelMatch.map(n => parseInt(n)).filter(n => n >= 20 && n <= 40);
               if (validLevels.length > 0) {
-                levelFound = validLevels[0]; // 最初に見つかったものを採用
+                levelFound = validLevels[0];
               }
             }
             if (levelFound) document.getElementById('up-level').value = levelFound;
 
 
-            // --- 2. 右下エリア (スコア・判定) ---
-            // 下部40%~100%, 左50%~100% の範囲を想定
-            const scoreBlob = await cropImage(imgForCrop, 0.5, 0.4, 0.5, 0.6);
+            // --- 2. 右下エリア (スコア・判定) [緑枠] ---
+            const r2 = {x:0.5, y:0.4, w:0.5, h:0.6};
+            drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00"); // 鮮やかな緑
+
+            const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h);
             const scoreRet = await worker.recognize(scoreBlob);
-            const scoreText = scoreRet.data.text.replace(/O/g, '0').replace(/o/g, '0'); // ゼロ誤認修正
+            const scoreText = scoreRet.data.text.replace(/O/g, '0').replace(/o/g, '0');
             console.log("[OCR] Score Area:", scoreText);
 
             // GOOD/BAD/MISS の数値取得
             const extractCount = (label) => {
-               // 行ごとの処理に変更 (例: "GOOD 5")
                const lines = scoreText.split('\n');
                for (let line of lines) {
                  if (line.toUpperCase().includes(label)) {
-                   // ラベルの後ろにある数字を探す
                    const m = line.match(/\d+/);
                    if (m) return parseInt(m[0], 10);
                  }
@@ -612,17 +651,18 @@
             document.getElementById('up-miss').value = totalMiss;
 
 
-            // --- 3. 左上エリア (曲名) ---
-            // 上部0~25%, 左0%~70% の範囲を想定 (難易度表示に被らないように)
-            const titleBlob = await cropImage(imgForCrop, 0.0, 0.0, 0.7, 0.25);
+            // --- 3. 左上エリア (曲名) [青枠] ---
+            const r3 = {x:0.0, y:0.0, w:0.7, h:0.25};
+            drawDebugRect(r3.x, r3.y, r3.w, r3.h, "blue");
+
+            const titleBlob = await cropImage(imgForCrop, r3.x, r3.y, r3.w, r3.h);
             const titleRet = await worker.recognize(titleBlob);
             const titleText = titleRet.data.text;
             console.log("[OCR] Title Area:", titleText);
 
-            // 曲名取得: 空白行を除去し、一番文字数が多そうな行、あるいは最初の行を採用
+            // 曲名取得
             const titleLines = titleText.split('\n').map(l => l.trim()).filter(l => l.length > 1);
             if (titleLines.length > 0) {
-              // スコアなどのゴミが入っていないか簡易チェック
               const likelyTitle = titleLines.find(l => !/CLEAR|RANK|SCORE/i.test(l));
               if (likelyTitle) {
                 document.getElementById('up-title').value = likelyTitle;
