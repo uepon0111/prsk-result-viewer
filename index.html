@@ -158,9 +158,9 @@
           <div class="form-group" style="flex:1;">
             <label>難易度</label>
             <select id="up-diff">
-              <option value="A">Append</option>
-              <option value="M">Master</option>
-              <option value="E">Expert</option>
+              <option value="A">APPEND</option>
+              <option value="M">MASTER</option>
+              <option value="E">EXPERT</option>
               <option value="H">Hard</option>
             </select>
           </div>
@@ -230,9 +230,9 @@
           <label><span class="material-symbols-outlined">speed</span> 難易度</label>
           <select id="filter-diff" onchange="updateView()">
             <option value="all">すべて</option>
-            <option value="A">Append</option>
-            <option value="M">Master</option>
-            <option value="E">Expert</option>
+            <option value="A">APPEND</option>
+            <option value="M">MASTER</option>
+            <option value="E">EXPERT</option>
             <option value="H">Hard</option>
           </select>
         </div>
@@ -802,7 +802,7 @@
         const regex = /^(\d+)([AMEH])\s+(.+)$/;
         const match = folderName.match(regex);
         if (!match) return null;
-        const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' };
+        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'Hard' };
         return {
           level: parseInt(match[1], 10),
           rawDiff: match[2],
