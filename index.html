@@ -669,7 +669,8 @@
             const worker = await Tesseract.createWorker('jpn+eng');
 
             // --- 1. 左上エリア (曲名・難易度・レベル) ---
-            const r1 = {x:0.0, y:0.0, w:0.5, h:0.3};
+            // 修正: 左上の余白をカットし、パネル位置に合わせる
+            const r1 = {x: 0.05, y: 0.02, w: 0.45, h: 0.20};
             drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
             const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, true);
@@ -740,7 +741,8 @@
             }
 
             // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
-            const r2 = {x:0.02, y:0.4, w:0.35, h:0.55};
+            // 修正: 位置を右下にずらす
+            const r2 = {x: 0.12, y: 0.52, w: 0.30, h: 0.38};
             drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
             const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true); // preprocess=trueで二値化
