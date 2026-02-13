@@ -17,463 +17,381 @@
         --diff-master: #AC3EE6;
         --diff-expert: #DC5268;
         --diff-hard:    #E9B153;
-        --diff-normal:  #5DBCFF;
-        --diff-easy:    #6EE172;
         --fc-color:     #FF82FF;
       }
       body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
-      h1 { text-align: center; color: #444; margin-bottom: 20px; }
-      
       .container { max-width: 800px; margin: 0 auto; }
+      h1 { text-align: center; color: #444; margin-bottom: 30px; }
       
-      /* Input Area */
-      .input-area { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
-      .file-drop-zone { border: 2px dashed #ccc; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: 0.2s; background: #fafafa; }
-      .file-drop-zone:hover { border-color: #888; background: #f0f0f0; }
-      .preview-img { max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; display: none; }
-      
-      .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
-      .form-group { flex: 1; display: flex; flex-direction: column; min-width: 120px; }
-      label { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; color: #666; }
-      input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 1rem; }
-      
-      .btn-add { background: linear-gradient(135deg, #33d9b2, #218c74); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; margin-top: 10px; }
-      .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(51, 217, 178, 0.4); }
-      .btn-add:disabled { background: #ccc; transform: none; box-shadow: none; cursor: not-allowed; }
-
-      /* Loading Overlay */
-      .loading-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255,255,255,0.8); z-index: 999;
-        flex-direction: column; align-items: center; justify-content: center;
+      .input-section {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
       }
-      .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #33d9b2; border-radius: 50%; animation: spin 1s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      .loading-text { margin-top: 15px; font-weight: bold; color: #555; }
+      .form-group { margin-bottom: 15px; }
+      label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+      input, select {
+        width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+        box-sizing: border-box; font-family: inherit; font-size: 1rem;
+      }
+      .row { display: flex; gap: 15px; }
+      .col { flex: 1; }
+      
+      button.btn-add {
+        width: 100%; padding: 12px; background-color: #333; color: #fff; border: none;
+        border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        margin-top: 10px;
+      }
+      button.btn-add:hover { opacity: 0.9; }
 
-      /* Grid */
-      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+      .grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
+      }
+      .card {
+        background: var(--card-bg); border-radius: 12px; overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: transform 0.2s;
+        display: flex; flex-direction: column;
+      }
+      .card:hover { transform: translateY(-3px); }
       
-      /* Card */
-      .card { background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; position: relative; }
-      .card:hover { transform: translateY(-4px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+      .card-img {
+        width: 100%; height: 160px; background-color: #eee;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        overflow: hidden;
+      }
+      .card-img img { width: 100%; height: 100%; object-fit: cover; }
       
-      .card-img-area { width: 100%; height: 160px; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; }
-      .card-img-area img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+      .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
       
-      .card-body { padding: 15px; }
-      .song-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-      .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
+      .song-meta { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+      .tag {
+        padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white;
+      }
+      .lvl { background-color: #888; }
+      .diff-MASTER { background-color: var(--diff-master); }
+      .diff-EXPERT { background-color: var(--diff-expert); }
+      .diff-HARD { background-color: var(--diff-hard); }
+      .diff-APPEND { background-color: var(--diff-append); }
       
-      .tag.diff-APPEND { background: var(--diff-append); }
-      .tag.diff-MASTER { background: var(--diff-master); }
-      .tag.diff-EXPERT { background: var(--diff-expert); }
-      .tag.diff-HARD   { background: var(--diff-hard); }
-      .tag.diff-NORMAL { background: var(--diff-normal); }
-      .tag.diff-EASY   { background: var(--diff-easy); }
-      .tag.lvl { background: #555; }
+      .song-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; line-height: 1.4; }
+      
+      .score-info {
+        margin-top: auto; display: flex; justify-content: space-between; align-items: center;
+        font-size: 0.9rem; color: #666; border-top: 1px solid #f0f0f0; padding-top: 10px;
+      }
+      .miss-badge {
+        font-weight: bold; color: #FF4444; background: #FFF0F0;
+        padding: 2px 8px; border-radius: 4px;
+      }
+      .fc-badge {
+        font-weight: bold; color: #fff; background: var(--fc-color);
+        padding: 2px 8px; border-radius: 4px;
+      }
 
-      .song-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* Image Modal */
+      .modal {
+        display: none; position: fixed; z-index: 999; left: 0; top: 0;
+        width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);
+        align-items: center; justify-content: center;
+      }
+      .modal-content { max-width: 90%; max-height: 90%; border-radius: 8px; }
       
-      .score-info { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; color: #666; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; }
-      .miss-count { color: #aaa; font-weight: bold; }
-      .miss-count.fc { color: var(--fc-color); }
-      
-      /* Modal */
-      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
-      .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-      
-      /* Canvas for processing (Hidden) */
-      #procCanvas { display: none; }
+      #ocr-status { font-size: 0.85rem; color: #666; margin-top: 5px; min-height: 1.2em; }
     </style>
   </head>
   <body>
 
-    <div class="loading-overlay" id="loader">
-      <div class="spinner"></div>
-      <div class="loading-text" id="loadingText">Processing...</div>
-    </div>
-
     <div class="container">
       <h1>プロセカ リザルト管理</h1>
       
-      <div class="input-area">
-        <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-          <span class="material-symbols-outlined" style="font-size: 48px; color: #ccc;">add_photo_alternate</span>
-          <p style="margin: 10px 0 0; color: #888;">タップまたはドラッグ＆ドロップで画像をアップロード<br>(自動解析)</p>
-          <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
-          <img id="preview" class="preview-img">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex: 2;">
-            <label>楽曲タイトル</label>
-            <input type="text" id="inputTitle" placeholder="例: ネクラチューンサーカス">
-          </div>
-          <div class="form-group">
-            <label>難易度</label>
-            <select id="inputDiff">
-              <option value="APPEND">APPEND</option>
-              <option value="MASTER">MASTER</option>
-              <option value="EXPERT">EXPERT</option>
-              <option value="HARD">HARD</option>
-              <option value="NORMAL">NORMAL</option>
-              <option value="EASY">EASY</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>レベル</label>
-            <input type="number" id="inputLevel" placeholder="34">
-          </div>
-          <div class="form-group">
-            <label>Miss数 (Good+Bad+Miss)</label>
-            <input type="number" id="inputMiss" placeholder="0">
-          </div>
+      <div class="input-section">
+        <div class="form-group">
+          <label>スクリーンショット (自動解析)</label>
+          <input type="file" id="inpFile" accept="image/*" onchange="handleFileSelect(this)">
+          <div id="ocr-status"></div>
         </div>
         
-        <button class="btn-add" id="btnAdd" onclick="addRecord()">記録を追加</button>
+        <div class="form-group">
+          <label>楽曲タイトル</label>
+          <input type="text" id="inpTitle" placeholder="楽曲名">
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label>難易度</label>
+              <select id="inpDiff">
+                <option value="MASTER">MASTER</option>
+                <option value="EXPERT">EXPERT</option>
+                <option value="APPEND">APPEND</option>
+                <option value="HARD">HARD</option>
+              </select>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label>レベル</label>
+              <input type="number" id="inpLevel" placeholder="33">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label>Miss (Good+Bad+Miss)</label>
+              <input type="number" id="inpMiss" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-add" onclick="addRecord()">記録を追加</button>
       </div>
 
-      <div class="grid" id="recordGrid">
+      <div class="grid" id="resultGrid">
         </div>
     </div>
 
-    <div class="modal" id="imageModal" onclick="closeImageModal()">
-      <img id="modalImg" src="">
+    <div id="imageModal" class="modal" onclick="closeImageModal()">
+      <img class="modal-content" id="modalImg">
     </div>
 
-    <canvas id="procCanvas"></canvas>
-
     <script>
-      // 楽曲データ
-      const MUSICS_JSON_URL = "https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/main/musics.json";
+      let records = [];
+      let currentImgData = null;
       let musicDatabase = [];
-      let currentImageBase64 = null;
 
       // ページ読み込み時に楽曲データを取得
-      window.onload = async () => {
+      window.addEventListener('load', async () => {
         try {
-          const response = await fetch(MUSICS_JSON_URL);
-          musicDatabase = await response.json();
-          console.log("Music DB loaded:", musicDatabase.length, "songs");
+          const res = await fetch('https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musics.json');
+          musicDatabase = await res.json();
+          console.log("Music database loaded:", musicDatabase.length, "songs.");
         } catch (e) {
-          console.error("Failed to load music DB", e);
-        }
-      };
-
-      // --- ファイル処理 ---
-      
-      function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        processImage(file);
-      }
-
-      // ドラッグ&ドロップ対応
-      const dropZone = document.getElementById('dropZone');
-      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#33d9b2'; });
-      dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.style.borderColor = '#ccc'; });
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#ccc';
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-          processImage(file);
+          console.error("Failed to load music database:", e);
+          document.getElementById('ocr-status').innerText = "楽曲DBの読み込みに失敗しました。";
         }
       });
 
-      // --- 画像処理 & OCR (メインロジック) ---
+      async function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+          const file = input.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            currentImgData = e.target.result;
+            recognizeImage(file);
+          }
+          reader.readAsDataURL(file);
+        }
+      }
 
-      async function processImage(file) {
-        // プレビュー表示
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          document.getElementById('preview').src = e.target.result;
-          document.getElementById('preview').style.display = 'block';
-          currentImageBase64 = e.target.result;
-        };
-        reader.readAsDataURL(file);
+      async function recognizeImage(file) {
+        const statusEl = document.getElementById('ocr-status');
+        statusEl.innerText = "画像を解析中... (Tesseract.js)";
 
-        // OCR開始
-        showLoading(true, "解析中... 画像を処理しています");
-        
         try {
-          // 1. 画像の前処理（Canvasへの描画と切り出し）
-          const imgBitmap = await createImageBitmap(file);
-          const canvas = document.getElementById('procCanvas');
-          const ctx = canvas.getContext('2d');
-          
-          const w = imgBitmap.width;
-          const h = imgBitmap.height;
-
-          // レイアウト調整用定数（プロセカのリザルト画面の一般的な配置に基づく％指定）
-          // タイトル・難易度エリア（左上）
-          const headerRegion = { x: 0, y: 0, w: w * 0.5, h: h * 0.4 };
-          // 判定エリア（右側、Good/Bad/Missがあるあたり）
-          const judgeRegion = { x: w * 0.5, y: h * 0.3, w: w * 0.5, h: h * 0.6 };
-
-          // --- ① ヘッダー解析（タイトル・難易度） ---
-          showLoading(true, "文字を読み取っています (1/2)");
-          const headerDataUrl = getProcessedDataUrl(imgBitmap, headerRegion);
-          
-          // 日本語+英語で解析
-          const headerResult = await Tesseract.recognize(
-            headerDataUrl,
+          // 言語を日本語+英語に設定
+          const { data: { text } } = await Tesseract.recognize(
+            file,
             'jpn+eng',
-            { logger: m => console.log(m) }
-          );
-          const headerText = headerResult.data.text;
-          console.log("Header OCR:", headerText);
-
-          // --- ② 判定詳細解析（数字） ---
-          showLoading(true, "スコアを読み取っています (2/2)");
-          const judgeDataUrl = getProcessedDataUrl(imgBitmap, judgeRegion, true); // true = 数字強化処理
-
-          // 英語のみ（数字重視）
-          const judgeResult = await Tesseract.recognize(
-            judgeDataUrl,
-            'eng',
-            { 
-              logger: m => console.log(m),
-              tessedit_char_whitelist: 'PERFECTGREATGOODBADMISS0123456789' // 数字と判定文字のみ許可
-            }
-          );
-          const judgeText = judgeResult.data.text;
-          console.log("Judge OCR:", judgeText);
-
-          // --- データ抽出と推論 ---
-
-          // 1. タイトル推論 (DBとのファジーマッチ)
-          // OCR結果から改行で区切って、最もDBに近い行を探す
-          const lines = headerText.split(/\r?\n/).filter(l => l.trim().length > 1);
-          let bestTitle = "";
-          let bestScore = Infinity;
-
-          // DB検索
-          lines.forEach(line => {
-            // ノイズ除去
-            const cleanLine = line.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '');
-            if(cleanLine.length < 2) return;
-
-            musicDatabase.forEach(music => {
-              const dist = levenshtein(cleanLine, music.title);
-              // タイトル長に対する距離の割合で評価（長いタイトルほど許容）
-              const score = dist / Math.max(cleanLine.length, music.title.length);
-              
-              if (score < bestScore) {
-                bestScore = score;
-                bestTitle = music.title;
+            { logger: m => {
+                if(m.status === 'recognizing text') {
+                  statusEl.innerText = `解析中... ${Math.round(m.progress * 100)}%`;
+                }
               }
-            });
-          });
-          
-          // ヒットしなければOCRの生テキスト（の最も長い行）を暫定使用
-          if (bestScore > 0.4) { // しきい値
-             // DBマッチがいまいちな場合、OCR結果の中で"楽曲名っぽい場所"を探す
-             // 通常、難易度の下にある最も大きな文字だが、ここでは簡易的に一番長い行を採用
-             bestTitle = lines.sort((a,b) => b.length - a.length)[0] || "";
-          }
-
-          // 2. 難易度推論
-          let detectedDiff = "MASTER"; // デフォルト
-          const diffMap = ["APPEND", "MASTER", "EXPERT", "HARD", "NORMAL", "EASY"];
-          // ヘッダーテキスト全体から検索
-          let minDiffDist = Infinity;
-          diffMap.forEach(diff => {
-            // OCRテキスト内にその単語が含まれているか、あるいは非常に近いか
-            if (headerText.toUpperCase().includes(diff)) {
-              detectedDiff = diff;
-              minDiffDist = 0;
-            } else {
-               // 単語が見つからない場合、一番近い文字列を探す簡易ロジック
-               // ここでは単純化のためincludeチェックを優先
             }
-          });
-
-          // 3. レベル推論 (数字の検索)
-          // 難易度文字の近くにある2桁の数字を探す (例: MASTER 34)
-          const levelMatch = headerText.match(/(?:APPEND|MASTER|EXPERT|HARD|NORMAL|EASY).*?(\d{2})/i) 
-                          || headerText.match(/Lv\.?\s*(\d{2})/i)
-                          || headerText.match(/(\d{2})/); // 最悪ただの2桁数字
-          const detectedLevel = levelMatch ? levelMatch[1] : "";
-
-          // 4. ミス数計算 (GOOD + BAD + MISS)
-          // judgeTextから "GOOD" "BAD" "MISS" の後ろにある数字を拾う
-          // Tesseractは行がずれることがあるため、単語と数字のペアを探す
-          const countGood = extractJudgeCount(judgeText, "GOOD");
-          const countBad  = extractJudgeCount(judgeText, "BAD");
-          const countMiss = extractJudgeCount(judgeText, "MISS");
+          );
           
-          const totalMiss = countGood + countBad + countMiss;
-          console.log(`Miss Calc: G:${countGood} + B:${countBad} + M:${countMiss} = ${totalMiss}`);
+          console.log("OCR Result Raw:", text);
+          statusEl.innerText = "解析完了。データを適用しました。";
+          
+          processOCRResult(text);
 
-          // --- UIへの反映 ---
-          document.getElementById('inputTitle').value = bestTitle;
-          document.getElementById('inputDiff').value = detectedDiff;
-          document.getElementById('inputLevel').value = detectedLevel;
-          document.getElementById('inputMiss').value = totalMiss;
-
-        } catch (err) {
-          console.error(err);
-          alert("画像の解析に失敗しました。");
-        } finally {
-          showLoading(false);
+        } catch (error) {
+          console.error(error);
+          statusEl.innerText = "解析に失敗しました。";
         }
       }
 
-      // --- 画像前処理用ヘルパー ---
-      
-      // 画像をCanvasに切り出して二値化処理を行ったDataURLを返す
-      function getProcessedDataUrl(imgBitmap, region, enhanceNumbers = false) {
-        const canvas = document.getElementById('procCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = region.w;
-        canvas.height = region.h;
-        
-        // 切り出し描画
-        ctx.drawImage(imgBitmap, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
-        
-        // ピクセル操作（二値化）
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-        
-        // 閾値処理
-        const threshold = 160; // 白背景の黒文字、あるいは明るい文字を抽出するための閾値
-        
-        for (let i = 0; i < data.length; i += 4) {
-          // グレースケール変換 (RGB平均)
-          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          
-          // ハイコントラスト化（白か黒にする）
-          // リザルト画面は背景が派手なことが多いので、文字をくっきりさせる
-          const val = avg > threshold ? 255 : 0;
-          
-          // enhanceNumbersの場合、さらにノイズ除去などを入れても良いが今回はシンプルに
-          
-          data[i] = val;     // R
-          data[i+1] = val;   // G
-          data[i+2] = val;   // B
-          // Alphaはそのまま
-        }
-        
-        ctx.putImageData(imgData, 0, 0);
-        return canvas.toDataURL('image/png');
-      }
+      function processOCRResult(text) {
+        // 1. 難易度推定 (APPEND, MASTER, EXPERT, HARD)
+        const diffs = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
+        // テキスト全体から最も一致する難易度を探す
+        // 大文字小文字を区別せず、含まれているかチェック
+        const upperText = text.toUpperCase();
+        let foundDiff = 'MASTER'; // デフォルト
+        let maxScore = -1;
 
-      // 判定の数字を抽出する正規表現ロジック
-      function extractJudgeCount(text, label) {
-        // パターン1: "GOOD 6" のように同じ行にある
-        const regexInline = new RegExp(`${label}\\s*[:.]?\\s*(\\d+)`, 'i');
-        let match = text.match(regexInline);
-        if (match) return parseInt(match[1]);
-
-        // パターン2: 改行されている場合 (Tesseractでよくある)
-        // "GOOD" の次に出現する数字を探す
-        // 単語位置を探す
-        const words = text.split(/\s+/);
-        const labelIndex = words.findIndex(w => w.toUpperCase().includes(label));
-        if (labelIndex !== -1 && labelIndex + 1 < words.length) {
-          const nextWord = words[labelIndex + 1];
-          if (/^\d+$/.test(nextWord)) {
-            return parseInt(nextWord);
+        // OCRの誤認識も考慮して少し柔軟に探す（単純なincludes検索）
+        for (const diff of diffs) {
+          if (upperText.includes(diff)) {
+            foundDiff = diff;
+            break; 
           }
         }
-        return 0; // 見つからなければ0
+        document.getElementById('inpDiff').value = foundDiff;
+
+        // 2. レベル推定 (Lv.34 などを探す)
+        // パターン: "Lv" や "Lv." の後に続く数字
+        const levelMatch = text.match(/Lv\.?\s*(\d+)/i);
+        if (levelMatch) {
+          document.getElementById('inpLevel').value = levelMatch[1];
+        }
+
+        // 3. ミス数 (Good + Bad + Miss) の計算
+        // OCRテキスト内から GOOD, BAD, MISS の数値を抽出する
+        // 形式例: "GOOD 10", "GOOD\n10", "Bad 4" など
+        // 誤認識対策: 0 (ゼロ) が O (オー) になったり、数字が離れている場合を考慮
+        
+        const getCount = (label) => {
+          // 正規表現: ラベル(GOOD等)の後に、数字ではない文字が0文字以上続き、その後に数字がある
+          // 例: "GOOD 10", "GOOD : 10", "GOOD\n10"
+          const regex = new RegExp(`${label}[^0-9]*([0-9]+)`, 'i');
+          const match = text.match(regex);
+          return match ? parseInt(match[1], 10) : 0;
+        };
+
+        const goodCount = getCount('GOOD');
+        const badCount = getCount('BAD');
+        const missCount = getCount('MISS');
+
+        // デバッグ用ログ
+        console.log(`Judgments -> Good:${goodCount}, Bad:${badCount}, Miss:${missCount}`);
+        
+        const totalMiss = goodCount + badCount + missCount;
+        
+        // もし解析結果が全て0の場合で、かつテキスト量がある場合は
+        // 誤検知の可能性が高いので強制上書きしない、あるいは0を入れる
+        // ここでは単純に計算結果を入れる
+        document.getElementById('inpMiss').value = totalMiss;
+
+        // 4. 楽曲タイトルのマッチング
+        // OCRテキストを行ごとに分割し、DB内のタイトルと類似度比較を行う
+        if (musicDatabase.length > 0) {
+          const lines = text.split(/\r?\n/).filter(line => line.trim().length > 2); // 短すぎるゴミ行は除外
+          let bestMatchTitle = "";
+          let minDistance = Infinity;
+
+          // 全行 x 全楽曲 で比較 (少し重いがブラウザJSなら許容範囲)
+          lines.forEach(line => {
+             // 読み取った行のノイズ除去 (記号などを消す)
+             const cleanLine = line.trim();
+             
+             musicDatabase.forEach(music => {
+               // 完全一致があれば即終了
+               if (music.title === cleanLine) {
+                 bestMatchTitle = music.title;
+                 minDistance = 0;
+               }
+               
+               // レーベンシュタイン距離を計算
+               // ただし、計算量を減らすため、長さが大きく違う場合はスキップ
+               if (Math.abs(music.title.length - cleanLine.length) > 5) return;
+
+               const dist = levenshtein(cleanLine, music.title);
+               if (dist < minDistance) {
+                 minDistance = dist;
+                 bestMatchTitle = music.title;
+               }
+             });
+          });
+
+          // しきい値: あまりにも似ていない場合は適用しない (誤爆防止)
+          // タイトル長に対して距離が大きすぎる場合は無視
+          if (bestMatchTitle && minDistance < bestMatchTitle.length * 0.4) {
+             document.getElementById('inpTitle').value = bestMatchTitle;
+          } else {
+             // マッチしなかった場合は、一番「それっぽい」行を入れるか、空にする
+             // ここでは空にしてユーザーに入力させる
+             console.log("No good title match found. Best was: " + bestMatchTitle + " (Dist: " + minDistance + ")");
+          }
+        }
       }
 
-      // レーベンシュタイン距離 (文字列類似度計算)
+      // レーベンシュタイン距離 (文字列の類似度計算)
       function levenshtein(s1, s2) {
-        if (!s1) return s2 ? s2.length : 0;
-        if (!s2) return s1.length;
-        const a = s1.length, b = s2.length;
-        const matrix = [];
+        const len1 = s1.length;
+        const len2 = s2.length;
+        const d = [];
 
-        for (let i = 0; i <= b; i++) matrix[i] = [i];
-        for (let j = 0; j <= a; j++) matrix[0][j] = j;
+        for (let i = 0; i <= len1; i++) d[i] = [i];
+        for (let j = 0; j <= len2; j++) d[0][j] = j;
 
-        for (let i = 1; i <= b; i++) {
-          for (let j = 1; j <= a; j++) {
-            if (s2.charAt(i - 1) == s1.charAt(j - 1)) {
-              matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-              matrix[i][j] = Math.min(
-                matrix[i - 1][j - 1] + 1,
-                Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
-              );
-            }
+        for (let i = 1; i <= len1; i++) {
+          for (let j = 1; j <= len2; j++) {
+            const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            d[i][j] = Math.min(
+              d[i - 1][j] + 1,        // deletion
+              d[i][j - 1] + 1,        // insertion
+              d[i - 1][j - 1] + cost  // substitution
+            );
           }
         }
-        return matrix[b][a];
+        return d[len1][len2];
       }
-
-      // --- UI操作 ---
 
       function addRecord() {
-        const title = document.getElementById('inputTitle').value;
-        const diff = document.getElementById('inputDiff').value;
-        const level = document.getElementById('inputLevel').value;
-        const miss = document.getElementById('inputMiss').value;
+        const title = document.getElementById('inpTitle').value;
+        const difficulty = document.getElementById('inpDiff').value;
+        const level = document.getElementById('inpLevel').value;
+        const miss = document.getElementById('inpMiss').value;
         
-        if (!title) { alert("タイトルを入力してください"); return; }
-        
-        const record = {
+        if(!title) { alert("楽曲タイトルを入力してください"); return; }
+
+        const rec = {
           id: Date.now(),
-          title: title,
-          difficulty: diff, // UI表示用
-          difficultyRaw: diff, // CSSクラス用
-          level: level,
-          miss: miss,
-          image: currentImageBase64
+          title,
+          difficulty,
+          difficultyRaw: difficulty, // CSSクラス用
+          level,
+          miss,
+          img: currentImgData
         };
         
-        renderCard(record);
+        records.unshift(rec);
+        renderGrid();
         
-        // フォームリセット
-        document.getElementById('inputTitle').value = '';
-        document.getElementById('inputLevel').value = '';
-        document.getElementById('inputMiss').value = '';
-        document.getElementById('preview').style.display = 'none';
-        currentImageBase64 = null;
-        document.getElementById('fileInput').value = '';
+        // Reset inputs (keep image for reference if needed, but usually clear)
+        document.getElementById('inpTitle').value = '';
+        document.getElementById('inpMiss').value = '0';
       }
 
-      function renderCard(rec) {
-        const grid = document.getElementById('recordGrid');
+      function renderGrid() {
+        const grid = document.getElementById('resultGrid');
+        grid.innerHTML = '';
         
-        let missDisplay = '';
-        if (parseInt(rec.miss) === 0) {
-          missDisplay = `<span class="miss-count fc"><span class="material-symbols-outlined" style="vertical-align:middle; font-size:1.1rem;">verified</span> FULL COMBO</span>`;
-        } else {
-          missDisplay = `<span class="miss-count">MISS ${rec.miss}</span>`;
-        }
+        records.forEach(rec => {
+          const isFC = rec.miss == 0;
+          const missDisplay = isFC 
+            ? `<span class="fc-badge">FULL COMBO</span>` 
+            : `<span class="miss-badge">${rec.miss} Miss</span>`; // ここでのMissはGood+Bad+Missの合計
 
-        const html = `
-          <div class="card">
-            <div class="card-img-area" onclick="openImageModal('${rec.image}')">
-              ${rec.image 
-                ? `<img src="${rec.image}">` 
-                : '<span style="color:#aaa;">NO IMAGE</span>'}
-            </div>
-            <div class="card-body">
-              <div class="song-meta">
-                <span class="tag lvl">Lv.${rec.level}</span>
-                <span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span>
+          const imgHtml = rec.img 
+            ? `<img src="${rec.img}" alt="Result Image">`
+            : '<span style="color:#aaa;">NO IMAGE</span>';
+
+          const html = `
+            <div class="card">
+              <div class="card-img" onclick="openImageModal('${rec.img}')">
+                ${imgHtml}
               </div>
-              <div class="song-title">${escapeHtml(rec.title)}</div>
-              <div class="score-info">
-                <span style="display:flex; align-items:center; gap:2px;">
-                  <span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result
-                </span>
-                ${missDisplay}
+              <div class="card-body">
+                <div class="song-meta">
+                  <span class="tag lvl">Lv.${rec.level}</span>
+                  <span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span>
+                </div>
+                <div class="song-title">${escapeHtml(rec.title)}</div>
+                <div class="score-info">
+                  <span style="display:flex; align-items:center; gap:2px;">
+                    <span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result
+                  </span>
+                  ${missDisplay}
+                </div>
               </div>
             </div>
-          </div>
-        `;
-        // 先頭に追加
-        grid.insertAdjacentHTML('afterbegin', html);
+          `;
+          grid.innerHTML += html;
+        });
       }
 
       function openImageModal(src) {
@@ -486,13 +404,6 @@
 
       function closeImageModal() {
         document.getElementById('imageModal').style.display = "none";
-      }
-
-      function showLoading(show, text) {
-        const overlay = document.getElementById('loader');
-        const txt = document.getElementById('loadingText');
-        overlay.style.display = show ? 'flex' : 'none';
-        if(text) txt.innerText = text;
       }
 
       function escapeHtml(text) {
