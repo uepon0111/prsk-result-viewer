@@ -664,7 +664,7 @@
 
             // --- 1. 左上エリア (曲名・難易度・レベル) ---
             // 修正: ジャケット右端付近を開始位置とし、高さを詰めて背景文字(R等)を回避
-            const r1 = {x:0.05, y:0.02, w:0.40, h:0.15};
+            const r1 = {x:0.20, y:0.01, w:0.40, h:0.10};
             drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
             const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, true);
@@ -729,7 +729,7 @@
 
             // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
             // 修正: 開始位置を下げて「ハイスコア」を除外。幅を狭めて右側のCOMBO数やLATE/FASTを物理的にカット
-            const r2 = {x:0.12, y:0.54, w:0.22, h:0.32};
+            const r2 = {x:0.10, y:0.54, w:0.20, h:0.32};
             drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
             const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true);
