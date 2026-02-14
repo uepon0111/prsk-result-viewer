@@ -290,12 +290,12 @@
       let musicDifficulties = []; // 難易度・レベルデータ格納用
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
-      // 難易度判別用の色定義
+      // 難易度判別用 (色判定はしないがDB検索キーとして残す)
       const TARGET_COLORS = {
-        'A': { hex: '#A993F7', rgb: {r: 169, g: 147, b: 247}, dbKey: 'append' },
-        'M': { hex: '#B38FF1', rgb: {r: 179, g: 143, b: 241}, dbKey: 'master' },
-        'E': { hex: '#EB5478', rgb: {r: 235, g: 84,  b: 120}, dbKey: 'expert' },
-        'H': { hex: '#F7CE46', rgb: {r: 247, g: 206, b: 70},  dbKey: 'hard' }
+        'A': { dbKey: 'append' },
+        'M': { dbKey: 'master' },
+        'E': { dbKey: 'expert' },
+        'H': { dbKey: 'hard' }
       };
 
       // ページロード時に楽曲データと難易度データを取得
@@ -584,7 +584,8 @@
         if (preprocess) {
            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
            const d = imgData.data;
-           // 簡易的な二値化 (閾値 160程度)
+           // 簡易的な二値化 (閾値 150程度)
+           // 背景色(色付き)と文字(白)を分離するため、閾値を少し高めに設定してもよいが、一旦150で動作確認
            for (let i = 0; i < d.length; i += 4) {
              const r = d[i];
              const g = d[i+1];
@@ -633,15 +634,6 @@
          return { bestMatch: bestCand, distance: minDist };
       }
 
-      // 色の距離計算 (RGB空間のユークリッド距離)
-      function getColorDistance(rgb1, rgb2) {
-        return Math.sqrt(
-          Math.pow(rgb1.r - rgb2.r, 2) +
-          Math.pow(rgb1.g - rgb2.g, 2) +
-          Math.pow(rgb1.b - rgb2.b, 2)
-        );
-      }
-
       document.getElementById('up-file').addEventListener('change', async function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
 
@@ -683,52 +675,40 @@
                );
             };
 
-            // --- 0. 難易度判別 (色ベース) ---
-            // タイトルエリア
+            const worker = await Tesseract.createWorker('jpn+eng');
+
+            // --- 0. 難易度判別 (OCR + 二値化) ---
+            // エリア定義 (色判別の時と同じ座標を使用)
             const r_diff = {x: 0.19, y: 0.07, w: 0.11, h: 0.05}; 
             drawDebugRect(r_diff.x, r_diff.y, r_diff.w, r_diff.h, "magenta");
 
-            const diffCanvas = document.createElement('canvas');
-            const diffCtx = diffCanvas.getContext('2d');
-            diffCanvas.width = imgForCrop.naturalWidth * r_diff.w;
-            diffCanvas.height = imgForCrop.naturalHeight * r_diff.h;
-            
-            diffCtx.drawImage(imgForCrop,
-              imgForCrop.naturalWidth * r_diff.x, imgForCrop.naturalHeight * r_diff.y,
-              imgForCrop.naturalWidth * r_diff.w, imgForCrop.naturalHeight * r_diff.h,
-              0, 0, diffCanvas.width, diffCanvas.height
-            );
-            
-            const diffImgData = diffCtx.getImageData(0, 0, diffCanvas.width, diffCanvas.height);
-            const data = diffImgData.data;
-            let r=0, g=0, b=0, count=0;
-            
-            for(let i=0; i<data.length; i+=4) {
-               r += data[i];
-               g += data[i+1];
-               b += data[i+2];
-               count++;
+            // 画像切り出し (二値化処理 preprocess=true)
+            const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
+            const diffRet = await worker.recognize(diffBlob);
+            const diffTextRaw = diffRet.data.text;
+            // アルファベットのみ抽出して大文字化
+            const diffText = diffTextRaw.replace(/[^A-Za-z]/g, '').toUpperCase(); 
+            console.log("[OCR] Diff Area:", diffText);
+
+            // マッチング候補
+            const diffCandidates = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
+            const diffMap = { 'APPEND': 'A', 'MASTER': 'M', 'EXPERT': 'E', 'HARD': 'H' };
+
+            let detectedDiffKey = 'M'; // デフォルト (読み取れなかった場合)
+            let minDiffDist = Infinity;
+
+            const matchResult = findBestMatch(diffText, diffCandidates);
+
+            if (matchResult && matchResult.bestMatch) {
+                // 文字列が極端に短い場合は誤検知の可能性があるが、ここでは一番近いものを採用
+                detectedDiffKey = diffMap[matchResult.bestMatch];
+                console.log(`[Diff Detect] Matched: ${matchResult.bestMatch} (Key: ${detectedDiffKey}, Dist: ${matchResult.distance})`);
+            } else {
+                console.log("[Diff Detect] No good match, using default 'M'");
             }
-            const avgColor = { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
-            console.log("[Color Detect] AvgRGB:", avgColor);
 
-            // 定義済み色との距離を比較
-            let detectedDiffKey = 'M'; // Default
-            let minColorDist = Infinity;
-
-            Object.keys(TARGET_COLORS).forEach(key => {
-              const target = TARGET_COLORS[key];
-              const dist = getColorDistance(avgColor, target.rgb);
-              if (dist < minColorDist) {
-                minColorDist = dist;
-                detectedDiffKey = key;
-              }
-            });
-            console.log("[Color Detect] Result:", detectedDiffKey, "Dist:", minColorDist);
             document.getElementById('up-diff').value = detectedDiffKey;
 
-
-            const worker = await Tesseract.createWorker('jpn+eng');
 
             // --- 1. 左上エリア (曲名) ---
             const r1 = {x:0.18, y:0.01, w:0.35, h:0.11};
@@ -775,7 +755,8 @@
             // 解析: レベル (DB検索による特定)
             let levelFoundInDB = false;
             if (foundMusicId && musicDifficulties.length > 0) {
-              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; // 'master', 'expert' etc.
+              // ここで先ほどOCRで判定した detectedDiffKey を使用してDBのキー(master, expert...)を取得
+              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; 
               const diffEntry = musicDifficulties.find(d => d.musicId === foundMusicId && d.musicDifficulty === targetDiffKey);
               
               if (diffEntry) {
