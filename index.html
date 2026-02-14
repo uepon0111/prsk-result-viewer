@@ -279,25 +279,43 @@
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
       const SCOPES = 'https://www.googleapis.com/auth/drive';
-      const MUSIC_DB_URL = 'https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/main/musics.json';
+      const MUSIC_DB_URL = 'https://sekai-world.github.io/sekai-master-db-diff/musics.json';
+      const MUSIC_DIFF_URL = 'https://sekai-world.github.io/sekai-master-db-diff/musicDifficulties.json';
 
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
       let allRecords = [];
       let musicDatabase = []; // 楽曲リスト格納用
+      let musicDifficulties = []; // 難易度・レベルデータ格納用
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
-      // ページロード時に楽曲データを取得
+      // 難易度判別用の色定義
+      const TARGET_COLORS = {
+        'A': { hex: '#EE83D5', rgb: {r: 238, g: 131, b: 213}, dbKey: 'append' },
+        'M': { hex: '#B38FF1', rgb: {r: 179, g: 143, b: 241}, dbKey: 'master' },
+        'E': { hex: '#EB5478', rgb: {r: 235, g: 84,  b: 120}, dbKey: 'expert' },
+        'H': { hex: '#F7CE46', rgb: {r: 247, g: 206, b: 70},  dbKey: 'hard' }
+      };
+
+      // ページロード時に楽曲データと難易度データを取得
       window.addEventListener('load', async () => {
         try {
-          const res = await fetch(MUSIC_DB_URL);
-          if(res.ok) {
-            musicDatabase = await res.json();
+          const [resMusics, resDiffs] = await Promise.all([
+            fetch(MUSIC_DB_URL),
+            fetch(MUSIC_DIFF_URL)
+          ]);
+          
+          if(resMusics.ok) {
+            musicDatabase = await resMusics.json();
             console.log("楽曲データベース読み込み完了:", musicDatabase.length, "曲");
           }
+          if(resDiffs.ok) {
+            musicDifficulties = await resDiffs.json();
+            console.log("難易度データベース読み込み完了:", musicDifficulties.length, "データ");
+          }
         } catch(e) {
-          console.error("楽曲データベースの取得に失敗:", e);
+          console.error("データベースの取得に失敗:", e);
         }
       });
 
@@ -567,16 +585,12 @@
            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
            const d = imgData.data;
            // 簡易的な二値化 (閾値 160程度)
-           // コントラストを上げるより、白(文字)とそれ以外を分ける
            for (let i = 0; i < d.length; i += 4) {
              const r = d[i];
              const g = d[i+1];
              const b = d[i+2];
              // 明るさ (RGB平均)
              const v = (0.2126*r + 0.7152*g + 0.0722*b);
-             const threshold = 160; 
-             const val = (v >= threshold) ? 0 : 255; 
-             // 文字(白)を残し、背景を黒くする
              const binVal = (v > 150) ? 255 : 0;
              d[i] = d[i+1] = d[i+2] = binVal;
            }
@@ -617,6 +631,15 @@
            }
          });
          return { bestMatch: bestCand, distance: minDist };
+      }
+
+      // 色の距離計算 (RGB空間のユークリッド距離)
+      function getColorDistance(rgb1, rgb2) {
+        return Math.sqrt(
+          Math.pow(rgb1.r - rgb2.r, 2) +
+          Math.pow(rgb1.g - rgb2.g, 2) +
+          Math.pow(rgb1.b - rgb2.b, 2)
+        );
       }
 
       document.getElementById('up-file').addEventListener('change', async function(e) {
@@ -660,10 +683,54 @@
                );
             };
 
+            // --- 0. 難易度判別 (色ベース) ---
+            // タイトルエリア(x=0.18)より左側にある難易度ラベルエリアの色を取得
+            const r_diff = {x: 0.03, y: 0.015, w: 0.12, h: 0.07}; 
+            drawDebugRect(r_diff.x, r_diff.y, r_diff.w, r_diff.h, "magenta");
+
+            const diffCanvas = document.createElement('canvas');
+            const diffCtx = diffCanvas.getContext('2d');
+            diffCanvas.width = imgForCrop.naturalWidth * r_diff.w;
+            diffCanvas.height = imgForCrop.naturalHeight * r_diff.h;
+            
+            diffCtx.drawImage(imgForCrop,
+              imgForCrop.naturalWidth * r_diff.x, imgForCrop.naturalHeight * r_diff.y,
+              imgForCrop.naturalWidth * r_diff.w, imgForCrop.naturalHeight * r_diff.h,
+              0, 0, diffCanvas.width, diffCanvas.height
+            );
+            
+            const diffImgData = diffCtx.getImageData(0, 0, diffCanvas.width, diffCanvas.height);
+            const data = diffImgData.data;
+            let r=0, g=0, b=0, count=0;
+            
+            for(let i=0; i<data.length; i+=4) {
+               r += data[i];
+               g += data[i+1];
+               b += data[i+2];
+               count++;
+            }
+            const avgColor = { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
+            console.log("[Color Detect] AvgRGB:", avgColor);
+
+            // 定義済み色との距離を比較
+            let detectedDiffKey = 'M'; // Default
+            let minColorDist = Infinity;
+
+            Object.keys(TARGET_COLORS).forEach(key => {
+              const target = TARGET_COLORS[key];
+              const dist = getColorDistance(avgColor, target.rgb);
+              if (dist < minColorDist) {
+                minColorDist = dist;
+                detectedDiffKey = key;
+              }
+            });
+            console.log("[Color Detect] Result:", detectedDiffKey, "Dist:", minColorDist);
+            document.getElementById('up-diff').value = detectedDiffKey;
+
+
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 1. 左上エリア (曲名・難易度・レベル) ---
-            // 修正: ジャケット右端付近を開始位置とし、高さを詰めて背景文字(R等)を回避
+            // --- 1. 左上エリア (曲名) ---
             const r1 = {x:0.18, y:0.01, w:0.35, h:0.11};
             drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
@@ -677,6 +744,9 @@
             const titleCandidates = lines.filter(l => !/(APPEND|MASTER|EXPERT|HARD|Lv|SCORE|RANK|CLEAR|FULL|COMBO)/i.test(l));
             
             let detectedTitle = "";
+            let finalTitleForDB = "";
+            let foundMusicId = null;
+
             if (titleCandidates.length > 0) {
               detectedTitle = titleCandidates.reduce((a, b) => a.length > b.length ? a : b);
             }
@@ -687,48 +757,50 @@
                if (result && result.bestMatch) {
                  console.log(`[Title Match] OCR: "${detectedTitle}" -> DB: "${result.bestMatch}" (Dist: ${result.distance})`);
                  document.getElementById('up-title').value = result.bestMatch;
+                 finalTitleForDB = result.bestMatch;
+                 
+                 // 曲IDを特定
+                 const musicEntry = musicDatabase.find(m => m.title === finalTitleForDB);
+                 if (musicEntry) foundMusicId = musicEntry.id;
+
                } else {
                  document.getElementById('up-title').value = detectedTitle;
+                 finalTitleForDB = detectedTitle;
                }
             } else {
                document.getElementById('up-title').value = detectedTitle;
+               finalTitleForDB = detectedTitle;
             }
 
-            // 解析: 難易度
-            const diffTypes = ["APPEND", "MASTER", "EXPERT", "HARD"];
-            const headerWords = headerText.split(/[\s\n]+/);
-            let bestDiffMatch = null;
-            let minDiffDist = 3; 
+            // 解析: レベル (DB検索による特定)
+            let levelFoundInDB = false;
+            if (foundMusicId && musicDifficulties.length > 0) {
+              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; // 'master', 'expert' etc.
+              const diffEntry = musicDifficulties.find(d => d.musicId === foundMusicId && d.musicDifficulty === targetDiffKey);
+              
+              if (diffEntry) {
+                console.log(`[Level Detect] DB Hit! ID:${foundMusicId} Diff:${targetDiffKey} -> Level:${diffEntry.playLevel}`);
+                document.getElementById('up-level').value = diffEntry.playLevel;
+                levelFoundInDB = true;
+              }
+            }
 
-            headerWords.forEach(word => {
-               if(word.length < 3) return; 
-               const res = findBestMatch(word.toUpperCase(), diffTypes);
-               if(res.distance < minDiffDist) {
-                 minDiffDist = res.distance;
-                 bestDiffMatch = res.bestMatch;
+            // DBで見つからなかった場合のフォールバック (OCRからLv数値を読み取り)
+            if (!levelFoundInDB) {
+               const levelMatch = headerText.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/ig);
+               if (levelMatch) {
+                 const validLevels = [];
+                 for(let m of levelMatch) {
+                   const num = parseInt(m.replace(/[^\d]/g, ''), 10);
+                   if (num >= 20 && num <= 40) validLevels.push(num);
+                 }
+                 if (validLevels.length > 0) {
+                   document.getElementById('up-level').value = validLevels[validLevels.length - 1];
+                 }
                }
-            });
-
-            if (bestDiffMatch) {
-               const diffMap = { "APPEND": "A", "MASTER": "M", "EXPERT": "E", "HARD": "H" };
-               document.getElementById('up-diff').value = diffMap[bestDiffMatch];
-            }
-
-            // 解析: レベル
-            const levelMatch = headerText.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/ig);
-            if (levelMatch) {
-              const validLevels = [];
-              for(let m of levelMatch) {
-                const num = parseInt(m.replace(/[^\d]/g, ''), 10);
-                if (num >= 20 && num <= 40) validLevels.push(num);
-              }
-              if (validLevels.length > 0) {
-                document.getElementById('up-level').value = validLevels[validLevels.length - 1];
-              }
             }
 
             // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
-            // 修正: 開始位置を下げて「ハイスコア」を除外。幅を狭めて右側のCOMBO数やLATE/FASTを物理的にカット
             const r2 = {x:0.10, y:0.54, w:0.21, h:0.32};
             drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
@@ -750,9 +822,7 @@
             };
 
             const parseVal = (line) => {
-               // 右側のノイズ（COMBOなど）が含まれている場合、その行を無視または慎重に処理
                if (/COMBO|LATE|FAST/i.test(line)) return 0;
-               
                const nums = line.split(/\s+/).map(s => cleanNumberStr(s)).filter(s => s.length > 0);
                if(nums.length > 0) {
                  return parseInt(nums[nums.length-1], 10);
