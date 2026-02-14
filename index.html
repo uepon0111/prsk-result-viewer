@@ -584,14 +584,18 @@
         if (preprocess) {
            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
            const d = imgData.data;
-           // 簡易的な二値化 (閾値 160程度)
+           // 簡易的な二値化 + 白黒反転 (APPEND等の明るい背景対策)
+           // 以前は閾値150でしたが、APPENDのピンク背景(明度高)が文字(白)と同化するため、閾値を220まで上げます。
+           // また、OCR(Tesseract)は「白背景に黒文字」が得意なため、文字部分を0(黒)にします。
            for (let i = 0; i < d.length; i += 4) {
              const r = d[i];
              const g = d[i+1];
              const b = d[i+2];
              // 明るさ (RGB平均)
              const v = (0.2126*r + 0.7152*g + 0.0722*b);
-             const binVal = (v > 150) ? 255 : 0;
+             
+             // 閾値処理: 明るい部分(文字)を黒、それ以外を白に反転
+             const binVal = (v > 220) ? 0 : 255;
              d[i] = d[i+1] = d[i+2] = binVal;
            }
            ctx.putImageData(imgData, 0, 0);
@@ -685,7 +689,7 @@
             let detectedDiffKey = 'M'; // Default
 
             try {
-              // 二値化してOCR
+              // 二値化してOCR (cropImage内の修正によりAPPENDも読み取れるはず)
               const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
               const diffRet = await worker.recognize(diffBlob);
               const diffText = diffRet.data.text.trim(); // 大文字小文字は比較時に処理
