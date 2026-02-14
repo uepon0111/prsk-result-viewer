@@ -561,8 +561,9 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // 画像切り抜き + 前処理（コントラスト強化・二値化）
-      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, preprocess = false) {
+      // 画像切り抜き + 前処理（コントラスト強化・二値化・反転）
+      // 変更点: invert引数を追加
+      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, preprocess = false, invert = false) {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
         const h = imageElement.naturalHeight;
@@ -584,18 +585,22 @@
         if (preprocess) {
            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
            const d = imgData.data;
-           // 簡易的な二値化 + 白黒反転 (APPEND等の明るい背景対策)
-           // 以前は閾値150でしたが、APPENDのピンク背景(明度高)が文字(白)と同化するため、閾値を220まで上げます。
-           // また、OCR(Tesseract)は「白背景に黒文字」が得意なため、文字部分を0(黒)にします。
+           // 簡易的な二値化 (閾値 160程度)
            for (let i = 0; i < d.length; i += 4) {
-             const r = d[i];
-             const g = d[i+1];
-             const b = d[i+2];
+             let r = d[i];
+             let g = d[i+1];
+             let b = d[i+2];
+
+             // 変更点: 反転処理を追加 (文字を黒、背景を白にするため)
+             if (invert) {
+               r = 255 - r;
+               g = 255 - g;
+               b = 255 - b;
+             }
+
              // 明るさ (RGB平均)
              const v = (0.2126*r + 0.7152*g + 0.0722*b);
-             
-             // 閾値処理: 明るい部分(文字)を黒、それ以外を白に反転
-             const binVal = (v > 220) ? 0 : 255;
+             const binVal = (v > 150) ? 255 : 0;
              d[i] = d[i+1] = d[i+2] = binVal;
            }
            ctx.putImageData(imgData, 0, 0);
@@ -689,8 +694,9 @@
             let detectedDiffKey = 'M'; // Default
 
             try {
-              // 二値化してOCR (cropImage内の修正によりAPPENDも読み取れるはず)
-              const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
+              // 変更点: 二値化してOCR (invert=true を指定)
+              // 白抜き文字(MASTER等)を黒文字にするため反転させる
+              const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true, true);
               const diffRet = await worker.recognize(diffBlob);
               const diffText = diffRet.data.text.trim(); // 大文字小文字は比較時に処理
               console.log("[OCR] Diff Area Raw:", diffText);
