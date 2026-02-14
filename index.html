@@ -158,9 +158,9 @@
           <div class="form-group" style="flex:1;">
             <label>難易度</label>
             <select id="up-diff">
-              <option value="A">APPEND</option>
-              <option value="M">MASTER</option>
-              <option value="E">EXPERT</option>
+              <option value="A">Append</option>
+              <option value="M">Master</option>
+              <option value="E">Expert</option>
               <option value="H">Hard</option>
             </select>
           </div>
@@ -230,9 +230,9 @@
           <label><span class="material-symbols-outlined">speed</span> 難易度</label>
           <select id="filter-diff" onchange="updateView()">
             <option value="all">すべて</option>
-            <option value="A">APPEND</option>
-            <option value="M">MASTER</option>
-            <option value="E">EXPERT</option>
+            <option value="A">Append</option>
+            <option value="M">Master</option>
+            <option value="E">Expert</option>
             <option value="H">Hard</option>
           </select>
         </div>
@@ -279,45 +279,12 @@
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
       const SCOPES = 'https://www.googleapis.com/auth/drive';
-      const MUSIC_DB_URL = 'https://sekai-world.github.io/sekai-master-db-diff/musics.json';
-      const MUSIC_DIFF_URL = 'https://sekai-world.github.io/sekai-master-db-diff/musicDifficulties.json';
 
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
       let allRecords = [];
-      let musicDatabase = []; // 楽曲リスト格納用
-      let musicDifficulties = []; // 難易度・レベルデータ格納用
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
-
-      // 難易度判別用のマッピング (DB検索用キー保持のため定義は残す)
-      const TARGET_COLORS = {
-        'A': { dbKey: 'append' },
-        'M': { dbKey: 'master' },
-        'E': { dbKey: 'expert' },
-        'H': { dbKey: 'hard' }
-      };
-
-      // ページロード時に楽曲データと難易度データを取得
-      window.addEventListener('load', async () => {
-        try {
-          const [resMusics, resDiffs] = await Promise.all([
-            fetch(MUSIC_DB_URL),
-            fetch(MUSIC_DIFF_URL)
-          ]);
-          
-          if(resMusics.ok) {
-            musicDatabase = await resMusics.json();
-            console.log("楽曲データベース読み込み完了:", musicDatabase.length, "曲");
-          }
-          if(resDiffs.ok) {
-            musicDifficulties = await resDiffs.json();
-            console.log("難易度データベース読み込み完了:", musicDifficulties.length, "データ");
-          }
-        } catch(e) {
-          console.error("データベースの取得に失敗:", e);
-        }
-      });
 
       // --- 認証関連 ---
 
@@ -561,8 +528,8 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // 画像切り抜き + 前処理（コントラスト強化・二値化）
-      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, preprocess = false) {
+      // 画像切り抜き + 前処理（コントラスト強化）
+      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, highContrast = false) {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
         const h = imageElement.naturalHeight;
@@ -573,68 +540,19 @@
         
         const ctx = canvas.getContext('2d');
         
-        // 元画像を描画
+        // 画像処理：コントラストを上げてOCR精度を高める
+        if (highContrast) {
+          ctx.filter = 'grayscale(100%) contrast(200%) invert(0)';
+        }
+
+        // sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
         ctx.drawImage(
           imageElement, 
           w * xRatio, h * yRatio, w * wRatio, h * hRatio, 
           0, 0, canvas.width, canvas.height
         );
         
-        // 前処理：二値化などで文字をくっきりさせる
-        if (preprocess) {
-           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-           const d = imgData.data;
-           // 簡易的な二値化 + 白黒反転 (APPEND等の明るい背景対策)
-           // 以前は閾値150でしたが、APPENDのピンク背景(明度高)が文字(白)と同化するため、閾値を220まで上げます。
-           // また、OCR(Tesseract)は「白背景に黒文字」が得意なため、文字部分を0(黒)にします。
-           for (let i = 0; i < d.length; i += 4) {
-             const r = d[i];
-             const g = d[i+1];
-             const b = d[i+2];
-             // 明るさ (RGB平均)
-             const v = (0.2126*r + 0.7152*g + 0.0722*b);
-             
-             // 閾値処理: 明るい部分(文字)を黒、それ以外を白に反転
-             const binVal = (v > 220) ? 0 : 255;
-             d[i] = d[i+1] = d[i+2] = binVal;
-           }
-           ctx.putImageData(imgData, 0, 0);
-        }
-        
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      }
-
-      // レーベンシュタイン距離 (文字列類似度計算)
-      function levenshtein(s1, s2) {
-        const l1 = s1.length, l2 = s2.length;
-        const d = [];
-        for (let i = 0; i <= l1; i++) d[i] = [i];
-        for (let j = 0; j <= l2; j++) d[0][j] = j;
-        for (let i = 1; i <= l1; i++) {
-          for (let j = 1; j <= l2; j++) {
-            const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-          }
-        }
-        return d[l1][l2];
-      }
-
-      // 配列から最も近い文字列を探す
-      function findBestMatch(target, candidates) {
-         if(!target || !candidates || candidates.length === 0) return null;
-         let bestCand = null;
-         let minDist = Infinity;
-         
-         const cleanTarget = target.trim();
-
-         candidates.forEach(cand => {
-           const dist = levenshtein(cleanTarget, cand);
-           if(dist < minDist) {
-             minDist = dist;
-             bestCand = cand;
-           }
-         });
-         return { bestMatch: bestCand, distance: minDist };
       }
 
       document.getElementById('up-file').addEventListener('change', async function(e) {
@@ -659,14 +577,17 @@
         statusDiv.className = "";
         submitBtn.disabled = true;
 
+        // 画像のロード完了を待ってから処理を行う
         const imgForCrop = new Image();
         imgForCrop.onload = async function() {
           try {
+            // Canvasのサイズを画像の天然サイズに合わせる
             canvas.width = imgForCrop.naturalWidth;
             canvas.height = imgForCrop.naturalHeight;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // リセット
             
+            // 描画ヘルパー
             const drawDebugRect = (xR, yR, wR, hR, color) => {
                ctx.strokeStyle = color;
                ctx.lineWidth = Math.max(3, imgForCrop.naturalWidth * 0.005);
@@ -678,117 +599,60 @@
                );
             };
 
-            // ワーカーの初期化をここで行う (難易度判定で使うため)
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 0. 難易度判別 (OCRベース) ---
-            // 難易度エリア (座標は既存維持: タイトル左上のラベル部分)
-            const r_diff = {x: 0.19, y: 0.07, w: 0.11, h: 0.05}; 
-            drawDebugRect(r_diff.x, r_diff.y, r_diff.w, r_diff.h, "magenta");
-
-            let detectedDiffKey = 'M'; // Default
-
-            try {
-              // 二値化してOCR (cropImage内の修正によりAPPENDも読み取れるはず)
-              // 難易度（Difficulty）は背景と文字のコントラストが重要なので preprocess=true を維持
-              const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
-              const diffRet = await worker.recognize(diffBlob);
-              const diffText = diffRet.data.text.trim(); // 大文字小文字は比較時に処理
-              console.log("[OCR] Diff Area Raw:", diffText);
-
-              const diffCandidates = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
-              const diffMap = {'APPEND':'A', 'MASTER':'M', 'EXPERT':'E', 'HARD':'H'};
-              
-              // 既存の findBestMatch を利用 (文字数や内容で類似度判定)
-              const diffMatch = findBestMatch(diffText.toUpperCase(), diffCandidates);
-              
-              if (diffMatch && diffMatch.bestMatch) {
-                 const matched = diffMatch.bestMatch;
-                 detectedDiffKey = diffMap[matched];
-                 console.log(`[Diff Detect] Result: OCR="${diffText}" -> Match="${matched}" (Dist:${diffMatch.distance}) -> Key="${detectedDiffKey}"`);
-              }
-            } catch (err) {
-              console.warn("難易度OCRに失敗しました。デフォルト(MASTER)を使用します。", err);
-            }
-
-            // 結果を反映
-            document.getElementById('up-diff').value = detectedDiffKey;
-
-
-            // --- 1. 左上エリア (曲名) ---
-            const r1 = {x:0.18, y:0.01, w:0.35, h:0.11};
+            // --- 1. 左上エリア (曲名・難易度・レベル) ---
+            // 画面比率が変わっても左上に固定されるため、広めに取る
+            // x:0, y:0 から幅50%, 高さ30%の範囲を検索
+            const r1 = {x:0.0, y:0.0, w:0.5, h:0.3};
             drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
-            // ★変更点★ 曲名は背景が多彩なため、二値化(preprocess=true)すると文字が消える可能性が高い。
-            // ここだけ false にして、カラーのままOCRにかける。
-            const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, false);
+            // タイトルなどの部分は白文字が多いため、コントラスト強化(highContrast=true)を使う
+            const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, true);
             const headerRet = await worker.recognize(headerBlob);
             const headerText = headerRet.data.text;
             console.log("[OCR] Header Area:\n", headerText);
 
             // 解析: 曲名
-            const lines = headerText.split('\n').map(l => l.trim()).filter(l => l.length > 1);
-            const titleCandidates = lines.filter(l => !/(APPEND|MASTER|EXPERT|HARD|Lv|SCORE|RANK|CLEAR|FULL|COMBO)/i.test(l));
-            
-            let detectedTitle = "";
-            let finalTitleForDB = "";
-            let foundMusicId = null;
-
+            const lines = headerText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            // "Lv."や"APPEND"などが含まれない行をタイトル候補とする
+            const titleCandidates = lines.filter(l => !/(APPEND|MASTER|EXPERT|HARD|Lv|SCORE|RANK|CLEAR)/i.test(l));
             if (titleCandidates.length > 0) {
-              detectedTitle = titleCandidates.reduce((a, b) => a.length > b.length ? a : b);
+              document.getElementById('up-title').value = titleCandidates[0];
             }
 
-            if(musicDatabase.length > 0 && detectedTitle) {
-               const titles = musicDatabase.map(m => m.title);
-               const result = findBestMatch(detectedTitle, titles);
-               if (result && result.bestMatch) {
-                 console.log(`[Title Match] OCR: "${detectedTitle}" -> DB: "${result.bestMatch}" (Dist: ${result.distance})`);
-                 document.getElementById('up-title').value = result.bestMatch;
-                 finalTitleForDB = result.bestMatch;
-                 
-                 // 曲IDを特定
-                 const musicEntry = musicDatabase.find(m => m.title === finalTitleForDB);
-                 if (musicEntry) foundMusicId = musicEntry.id;
+            // 解析: 難易度 & レベル
+            // 大文字にして検索
+            const upperHeader = headerText.toUpperCase();
+            
+            let diffCode = null;
+            if (upperHeader.includes("APPEND")) diffCode = "A";
+            else if (upperHeader.includes("MASTER")) diffCode = "M";
+            else if (upperHeader.includes("EXPERT")) diffCode = "E";
+            else if (upperHeader.includes("HARD")) diffCode = "H";
+            if (diffCode) document.getElementById('up-diff').value = diffCode;
 
-               } else {
-                 document.getElementById('up-title').value = detectedTitle;
-                 finalTitleForDB = detectedTitle;
-               }
-            } else {
-               document.getElementById('up-title').value = detectedTitle;
-               finalTitleForDB = detectedTitle;
-            }
-
-            // 解析: レベル (DB検索による特定)
-            let levelFoundInDB = false;
-            if (foundMusicId && musicDifficulties.length > 0) {
-              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; // 'master', 'expert' etc.
-              const diffEntry = musicDifficulties.find(d => d.musicId === foundMusicId && d.musicDifficulty === targetDiffKey);
-              
-              if (diffEntry) {
-                console.log(`[Level Detect] DB Hit! ID:${foundMusicId} Diff:${targetDiffKey} -> Level:${diffEntry.playLevel}`);
-                document.getElementById('up-level').value = diffEntry.playLevel;
-                levelFoundInDB = true;
+            // "Lv.30" や "30" を探す (20-40の範囲)
+            // 誤認識防止のため "Lv" の近くにある数字や、行単独の数字を優先したいが、まずは単純抽出
+            const levelMatch = upperHeader.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/g);
+            if (levelMatch) {
+              // 抽出された2桁数字のうち、20〜40のもの有効とする
+              const validLevels = [];
+              for(let m of levelMatch) {
+                const num = parseInt(m.replace(/[^\d]/g, ''), 10);
+                if (num >= 20 && num <= 40) validLevels.push(num);
+              }
+              if (validLevels.length > 0) {
+                // 難易度表記の近くにある可能性が高いので、最後のほうを採用してみる（タイトルに数字がある場合への対策）
+                document.getElementById('up-level').value = validLevels[validLevels.length - 1];
               }
             }
 
-            // DBで見つからなかった場合のフォールバック (OCRからLv数値を読み取り)
-            if (!levelFoundInDB) {
-               const levelMatch = headerText.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/ig);
-               if (levelMatch) {
-                 const validLevels = [];
-                 for(let m of levelMatch) {
-                   const num = parseInt(m.replace(/[^\d]/g, ''), 10);
-                   if (num >= 20 && num <= 40) validLevels.push(num);
-                 }
-                 if (validLevels.length > 0) {
-                   document.getElementById('up-level').value = validLevels[validLevels.length - 1];
-                 }
-               }
-            }
 
             // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
-            const r2 = {x:0.10, y:0.54, w:0.21, h:0.32};
+            // 縦に長いリストなので、左側の広い範囲(下半分)を取る
+            // x:0.02, y:0.4 から幅35%, 高さ50%
+            const r2 = {x:0.02, y:0.4, w:0.35, h:0.55};
             drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
             const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true);
@@ -796,40 +660,41 @@
             const scoreText = scoreRet.data.text;
             console.log("[OCR] Score Area:\n", scoreText);
 
-            // スコア解析
+            // スコア解析ロジック改善
+            // 行ごとに分割し、キーワードを探す。
+            // "GOOD"はOCRで "G00D", "GO0D", "600D" などになりやすいので正規表現でカバー
             const scoreLines = scoreText.split('\n');
             
             let countGood = 0;
             let countBad = 0;
             let countMiss = 0;
 
-            const cleanNumberStr = (str) => {
-              // OCR誤読補正: O/Q/D -> 0, I/l -> 1, S -> 5
-              return str.replace(/[OQDo]/gi, '0').replace(/[Ili]/g, '1').replace(/S/gi, '5').replace(/[^\d]/g, '');
+            const parseCountFromLine = (line, regex) => {
+              if (regex.test(line)) {
+                // 数字だけ抽出
+                const nums = line.match(/\d+/g);
+                if (nums && nums.length > 0) {
+                  // 行の最後の数字がカウント値であることが多い ("GOOD 1" のような形式)
+                  return parseInt(nums[nums.length - 1], 10);
+                }
+              }
+              return 0;
             };
 
-            const parseVal = (line) => {
-               if (/COMBO|LATE|FAST/i.test(line)) return 0;
-               const nums = line.split(/\s+/).map(s => cleanNumberStr(s)).filter(s => s.length > 0);
-               if(nums.length > 0) {
-                 return parseInt(nums[nums.length-1], 10);
-               }
-               return 0;
-            };
+            // GOOD (G00D, G0OD, etc.)
+            // パターン: G + (Oか0かQかD)が2つ + D
+            const regGood = /G[O0QD]{2}D/i; 
+            const regBad  = /BAD/i;
+            const regMiss = /MISS/i;
 
             scoreLines.forEach(line => {
-              const upLine = line.toUpperCase();
-              
-              if (/G[0OQ\d]{2}D|GOOD/i.test(upLine)) {
-                 countGood = parseVal(line);
-              }
-              if (/B[A4]D|BAD/i.test(upLine)) {
-                 countBad = parseVal(line);
-              }
-              if (/M[I1l]SS|MISS/i.test(upLine)) {
-                 countMiss = parseVal(line);
-              }
+              if (regGood.test(line)) countGood = parseCountFromLine(line, regGood);
+              if (regBad.test(line))  countBad  = parseCountFromLine(line, regBad);
+              if (regMiss.test(line)) countMiss = parseCountFromLine(line, regMiss);
             });
+
+            // もし上記で見つからない場合、"PERFECT"の下にある数字の並びとして推測する等のロジックも考えられるが、
+            // まずはキーワード検索の強化で対応。
             
             const totalMiss = countGood + countBad + countMiss;
             document.getElementById('up-miss').value = totalMiss;
@@ -848,6 +713,7 @@
           }
         };
 
+        // 画像ソースを設定してロード開始
         imgForCrop.src = URL.createObjectURL(file);
       });
 
@@ -936,7 +802,7 @@
         const regex = /^(\d+)([AMEH])\s+(.+)$/;
         const match = folderName.match(regex);
         if (!match) return null;
-        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'Hard' };
+        const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' };
         return {
           level: parseInt(match[1], 10),
           rawDiff: match[2],
@@ -1030,7 +896,7 @@
           }
         });
 
-        renderGrid(records);
+        renderGrid(filtered);
       }
 
       function renderGrid(records) {
