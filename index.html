@@ -161,7 +161,7 @@
               <option value="A">APPEND</option>
               <option value="M">MASTER</option>
               <option value="E">EXPERT</option>
-              <option value="H">HARD</option>
+              <option value="H">Hard</option>
             </select>
           </div>
         </div>
@@ -233,7 +233,7 @@
             <option value="A">APPEND</option>
             <option value="M">MASTER</option>
             <option value="E">EXPERT</option>
-            <option value="H">HARD</option>
+            <option value="H">Hard</option>
           </select>
         </div>
 
@@ -290,7 +290,7 @@
       let musicDifficulties = []; // 難易度・レベルデータ格納用
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
-      // 難易度判別用 (色判定はしないがDB検索キーとして残す)
+      // 難易度判別用のマッピング (DB検索用キー保持のため定義は残す)
       const TARGET_COLORS = {
         'A': { dbKey: 'append' },
         'M': { dbKey: 'master' },
@@ -584,8 +584,7 @@
         if (preprocess) {
            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
            const d = imgData.data;
-           // 簡易的な二値化 (閾値 150程度)
-           // 背景色(色付き)と文字(白)を分離するため、閾値を少し高めに設定してもよいが、一旦150で動作確認
+           // 簡易的な二値化 (閾値 160程度)
            for (let i = 0; i < d.length; i += 4) {
              const r = d[i];
              const g = d[i+1];
@@ -675,38 +674,39 @@
                );
             };
 
+            // ワーカーの初期化をここで行う (難易度判定で使うため)
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 0. 難易度判別 (OCR + 二値化) ---
-            // エリア定義 (色判別の時と同じ座標を使用)
+            // --- 0. 難易度判別 (OCRベース) ---
+            // 難易度エリア (座標は既存維持: タイトル左上のラベル部分)
             const r_diff = {x: 0.19, y: 0.07, w: 0.11, h: 0.05}; 
             drawDebugRect(r_diff.x, r_diff.y, r_diff.w, r_diff.h, "magenta");
 
-            // 画像切り出し (二値化処理 preprocess=true)
-            const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
-            const diffRet = await worker.recognize(diffBlob);
-            const diffTextRaw = diffRet.data.text;
-            // アルファベットのみ抽出して大文字化
-            const diffText = diffTextRaw.replace(/[^A-Za-z]/g, '').toUpperCase(); 
-            console.log("[OCR] Diff Area:", diffText);
+            let detectedDiffKey = 'M'; // Default
 
-            // マッチング候補
-            const diffCandidates = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
-            const diffMap = { 'APPEND': 'A', 'MASTER': 'M', 'EXPERT': 'E', 'HARD': 'H' };
+            try {
+              // 二値化してOCR
+              const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
+              const diffRet = await worker.recognize(diffBlob);
+              const diffText = diffRet.data.text.trim(); // 大文字小文字は比較時に処理
+              console.log("[OCR] Diff Area Raw:", diffText);
 
-            let detectedDiffKey = 'M'; // デフォルト (読み取れなかった場合)
-            let minDiffDist = Infinity;
-
-            const matchResult = findBestMatch(diffText, diffCandidates);
-
-            if (matchResult && matchResult.bestMatch) {
-                // 文字列が極端に短い場合は誤検知の可能性があるが、ここでは一番近いものを採用
-                detectedDiffKey = diffMap[matchResult.bestMatch];
-                console.log(`[Diff Detect] Matched: ${matchResult.bestMatch} (Key: ${detectedDiffKey}, Dist: ${matchResult.distance})`);
-            } else {
-                console.log("[Diff Detect] No good match, using default 'M'");
+              const diffCandidates = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
+              const diffMap = {'APPEND':'A', 'MASTER':'M', 'EXPERT':'E', 'HARD':'H'};
+              
+              // 既存の findBestMatch を利用 (文字数や内容で類似度判定)
+              const diffMatch = findBestMatch(diffText.toUpperCase(), diffCandidates);
+              
+              if (diffMatch && diffMatch.bestMatch) {
+                 const matched = diffMatch.bestMatch;
+                 detectedDiffKey = diffMap[matched];
+                 console.log(`[Diff Detect] Result: OCR="${diffText}" -> Match="${matched}" (Dist:${diffMatch.distance}) -> Key="${detectedDiffKey}"`);
+              }
+            } catch (err) {
+              console.warn("難易度OCRに失敗しました。デフォルト(MASTER)を使用します。", err);
             }
 
+            // 結果を反映
             document.getElementById('up-diff').value = detectedDiffKey;
 
 
@@ -755,8 +755,7 @@
             // 解析: レベル (DB検索による特定)
             let levelFoundInDB = false;
             if (foundMusicId && musicDifficulties.length > 0) {
-              // ここで先ほどOCRで判定した detectedDiffKey を使用してDBのキー(master, expert...)を取得
-              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; 
+              const targetDiffKey = TARGET_COLORS[detectedDiffKey].dbKey; // 'master', 'expert' etc.
               const diffEntry = musicDifficulties.find(d => d.musicId === foundMusicId && d.musicDifficulty === targetDiffKey);
               
               if (diffEntry) {
@@ -930,7 +929,7 @@
         const regex = /^(\d+)([AMEH])\s+(.+)$/;
         const match = folderName.match(regex);
         if (!match) return null;
-        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'HARD' };
+        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'Hard' };
         return {
           level: parseInt(match[1], 10),
           rawDiff: match[2],
