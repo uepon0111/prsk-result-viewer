@@ -575,8 +575,8 @@
              // 明るさ (RGB平均)
              const v = (0.2126*r + 0.7152*g + 0.0722*b);
              const threshold = 160; 
-             const val = (v >= threshold) ? 0 : 255; // 文字(白)を黒、背景を白にする反転処理を入れるとTesseractが読みやすい場合があるが、ここでは白文字抽出を想定
-             // 今回は白文字を残し、背景を黒くする
+             const val = (v >= threshold) ? 0 : 255; 
+             // 文字(白)を残し、背景を黒くする
              const binVal = (v > 150) ? 255 : 0;
              d[i] = d[i+1] = d[i+2] = binVal;
            }
@@ -607,12 +607,9 @@
          let bestCand = null;
          let minDist = Infinity;
          
-         // ターゲットの前後の空白除去と、一部OCRノイズ除去
          const cleanTarget = target.trim();
 
          candidates.forEach(cand => {
-           // 部分一致ボーナス: OCR結果がタイトルの一部を含んでいる場合、距離を減らすなどの工夫も可能だが、
-           // ここでは単純なレーベンシュタイン距離を使用
            const dist = levenshtein(cleanTarget, cand);
            if(dist < minDist) {
              minDist = dist;
@@ -644,17 +641,14 @@
         statusDiv.className = "";
         submitBtn.disabled = true;
 
-        // 画像のロード完了を待ってから処理を行う
         const imgForCrop = new Image();
         imgForCrop.onload = async function() {
           try {
-            // Canvasのサイズを画像の天然サイズに合わせる
             canvas.width = imgForCrop.naturalWidth;
             canvas.height = imgForCrop.naturalHeight;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // リセット
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
             
-            // 描画ヘルパー
             const drawDebugRect = (xR, yR, wR, hR, color) => {
                ctx.strokeStyle = color;
                ctx.lineWidth = Math.max(3, imgForCrop.naturalWidth * 0.005);
@@ -669,8 +663,8 @@
             const worker = await Tesseract.createWorker('jpn+eng');
 
             // --- 1. 左上エリア (曲名・難易度・レベル) ---
-            // 修正: 左上の余白をカットし、パネル位置に合わせる
-            const r1 = {x: 0.05, y: 0.02, w: 0.45, h: 0.20};
+            // 修正: ジャケット右端付近を開始位置とし、高さを詰めて背景文字(R等)を回避
+            const r1 = {x:0.05, y:0.02, w:0.40, h:0.15};
             drawDebugRect(r1.x, r1.y, r1.w, r1.h, "blue");
 
             const headerBlob = await cropImage(imgForCrop, r1.x, r1.y, r1.w, r1.h, true);
@@ -678,22 +672,18 @@
             const headerText = headerRet.data.text;
             console.log("[OCR] Header Area:\n", headerText);
 
-            // 解析: 曲名 (JSONデータとの照合)
-            // OCR結果を行ごとに分割し、明らかにタイトルでない行を除外
+            // 解析: 曲名
             const lines = headerText.split('\n').map(l => l.trim()).filter(l => l.length > 1);
             const titleCandidates = lines.filter(l => !/(APPEND|MASTER|EXPERT|HARD|Lv|SCORE|RANK|CLEAR|FULL|COMBO)/i.test(l));
             
             let detectedTitle = "";
             if (titleCandidates.length > 0) {
-              // 候補の中で一番長いものを仮タイトルとする（短いゴミ文字列を除外するため）
               detectedTitle = titleCandidates.reduce((a, b) => a.length > b.length ? a : b);
             }
 
-            // データベースがある場合、最も近いタイトルを検索
             if(musicDatabase.length > 0 && detectedTitle) {
                const titles = musicDatabase.map(m => m.title);
                const result = findBestMatch(detectedTitle, titles);
-               // あまりに距離が離れている場合はOCR結果をそのまま使うか検討（ここでは閾値を設けない）
                if (result && result.bestMatch) {
                  console.log(`[Title Match] OCR: "${detectedTitle}" -> DB: "${result.bestMatch}" (Dist: ${result.distance})`);
                  document.getElementById('up-title').value = result.bestMatch;
@@ -704,16 +694,14 @@
                document.getElementById('up-title').value = detectedTitle;
             }
 
-            // 解析: 難易度 (APPEND, MASTER, EXPERT, HARD)
-            // OCRテキスト全体から最も近い難易度を探す
+            // 解析: 難易度
             const diffTypes = ["APPEND", "MASTER", "EXPERT", "HARD"];
-            // ヘッダーテキスト内の単語単位、あるいは行単位でマッチング
             const headerWords = headerText.split(/[\s\n]+/);
             let bestDiffMatch = null;
-            let minDiffDist = 3; // 許容する誤差(文字数)
+            let minDiffDist = 3; 
 
             headerWords.forEach(word => {
-               if(word.length < 3) return; // 短すぎる単語は無視
+               if(word.length < 3) return; 
                const res = findBestMatch(word.toUpperCase(), diffTypes);
                if(res.distance < minDiffDist) {
                  minDiffDist = res.distance;
@@ -727,7 +715,6 @@
             }
 
             // 解析: レベル
-            // "Lv.30" のような表記を探す
             const levelMatch = headerText.match(/(?:Lv\.?|LEVEL)?\s*(\d{2})/ig);
             if (levelMatch) {
               const validLevels = [];
@@ -741,16 +728,16 @@
             }
 
             // --- 2. 左下エリア (スコア詳細 GOOD/BAD/MISS) ---
-            // 修正: 位置を右下にずらす
-            const r2 = {x: 0.12, y: 0.52, w: 0.30, h: 0.38};
+            // 修正: 開始位置を下げて「ハイスコア」を除外。幅を狭めて右側のCOMBO数やLATE/FASTを物理的にカット
+            const r2 = {x:0.12, y:0.54, w:0.22, h:0.32};
             drawDebugRect(r2.x, r2.y, r2.w, r2.h, "#00ff00");
 
-            const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true); // preprocess=trueで二値化
+            const scoreBlob = await cropImage(imgForCrop, r2.x, r2.y, r2.w, r2.h, true);
             const scoreRet = await worker.recognize(scoreBlob);
             const scoreText = scoreRet.data.text;
             console.log("[OCR] Score Area:\n", scoreText);
 
-            // スコア解析: 行ごとに GOOD, BAD, MISS を探し、その行または直後の数字を取得
+            // スコア解析
             const scoreLines = scoreText.split('\n');
             
             let countGood = 0;
@@ -758,12 +745,14 @@
             let countMiss = 0;
 
             const cleanNumberStr = (str) => {
-              // OCR誤読補正: O->0, I->1, S->5, etc.
-              return str.replace(/O/gi, '0').replace(/I/gi, '1').replace(/l/g, '1').replace(/S/gi, '5').replace(/[^\d]/g, '');
+              // OCR誤読補正: O/Q/D -> 0, I/l -> 1, S -> 5
+              return str.replace(/[OQDo]/gi, '0').replace(/[Ili]/g, '1').replace(/S/gi, '5').replace(/[^\d]/g, '');
             };
 
             const parseVal = (line) => {
-               // 行末にある数字を取り出す
+               // 右側のノイズ（COMBOなど）が含まれている場合、その行を無視または慎重に処理
+               if (/COMBO|LATE|FAST/i.test(line)) return 0;
+               
                const nums = line.split(/\s+/).map(s => cleanNumberStr(s)).filter(s => s.length > 0);
                if(nums.length > 0) {
                  return parseInt(nums[nums.length-1], 10);
@@ -771,19 +760,15 @@
                return 0;
             };
 
-            // 柔軟な検索: "G00D", "BAD", "M1SS" などの類似文字列を含む行を探す
             scoreLines.forEach(line => {
               const upLine = line.toUpperCase();
               
-              // GOOD判定 (G..D のパターン)
               if (/G[0OQ\d]{2}D|GOOD/i.test(upLine)) {
                  countGood = parseVal(line);
               }
-              // BAD判定
               if (/B[A4]D|BAD/i.test(upLine)) {
                  countBad = parseVal(line);
               }
-              // MISS判定
               if (/M[I1l]SS|MISS/i.test(upLine)) {
                  countMiss = parseVal(line);
               }
@@ -806,7 +791,6 @@
           }
         };
 
-        // 画像ソースを設定してロード開始
         imgForCrop.src = URL.createObjectURL(file);
       });
 
