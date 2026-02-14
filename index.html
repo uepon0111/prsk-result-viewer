@@ -161,7 +161,7 @@
               <option value="A">APPEND</option>
               <option value="M">MASTER</option>
               <option value="E">EXPERT</option>
-              <option value="H">Hard</option>
+              <option value="H">HARD</option>
             </select>
           </div>
         </div>
@@ -233,7 +233,7 @@
             <option value="A">APPEND</option>
             <option value="M">MASTER</option>
             <option value="E">EXPERT</option>
-            <option value="H">Hard</option>
+            <option value="H">HARD</option>
           </select>
         </div>
 
@@ -930,7 +930,7 @@
         const regex = /^(\d+)([AMEH])\s+(.+)$/;
         const match = folderName.match(regex);
         if (!match) return null;
-        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'Hard' };
+        const diffMap = { 'A': 'APPEND', 'M': 'MASTER', 'E': 'EXPERT', 'H': 'HARD' };
         return {
           level: parseInt(match[1], 10),
           rawDiff: match[2],
