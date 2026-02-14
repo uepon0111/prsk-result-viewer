@@ -290,7 +290,7 @@
       let musicDifficulties = []; // 難易度・レベルデータ格納用
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
-      // 難易度判別用の色定義（DBキーマッピング用に使用）
+      // 難易度判別用の色定義
       const TARGET_COLORS = {
         'A': { hex: '#A993F7', rgb: {r: 169, g: 147, b: 247}, dbKey: 'append' },
         'M': { hex: '#B38FF1', rgb: {r: 179, g: 143, b: 241}, dbKey: 'master' },
@@ -633,6 +633,15 @@
          return { bestMatch: bestCand, distance: minDist };
       }
 
+      // 色の距離計算 (RGB空間のユークリッド距離)
+      function getColorDistance(rgb1, rgb2) {
+        return Math.sqrt(
+          Math.pow(rgb1.r - rgb2.r, 2) +
+          Math.pow(rgb1.g - rgb2.g, 2) +
+          Math.pow(rgb1.b - rgb2.b, 2)
+        );
+      }
+
       document.getElementById('up-file').addEventListener('change', async function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
 
@@ -674,34 +683,52 @@
                );
             };
 
-            // Worker初期化
-            const worker = await Tesseract.createWorker('jpn+eng');
-
-            // --- 0. 難易度判別 (OCRベース) ---
-            // 座標定義 (既存のr_diffを使用)
+            // --- 0. 難易度判別 (色ベース) ---
+            // タイトルエリア
             const r_diff = {x: 0.19, y: 0.07, w: 0.11, h: 0.05}; 
             drawDebugRect(r_diff.x, r_diff.y, r_diff.w, r_diff.h, "magenta");
 
-            // 画像切り抜き (二値化有効: preprocess=true)
-            const diffBlob = await cropImage(imgForCrop, r_diff.x, r_diff.y, r_diff.w, r_diff.h, true);
-            const diffRet = await worker.recognize(diffBlob);
-            const diffText = diffRet.data.text.toUpperCase();
-            console.log("[OCR] Diff Area:", diffText);
-
-            // マッチング処理
-            const diffCandidates = ['APPEND', 'MASTER', 'EXPERT', 'HARD'];
-            const diffMatch = findBestMatch(diffText, diffCandidates);
+            const diffCanvas = document.createElement('canvas');
+            const diffCtx = diffCanvas.getContext('2d');
+            diffCanvas.width = imgForCrop.naturalWidth * r_diff.w;
+            diffCanvas.height = imgForCrop.naturalHeight * r_diff.h;
             
-            let detectedDiffKey = 'M'; // Default
-
-            if (diffMatch && diffMatch.bestMatch) {
-               const map = { 'APPEND': 'A', 'MASTER': 'M', 'EXPERT': 'E', 'HARD': 'H' };
-               detectedDiffKey = map[diffMatch.bestMatch] || 'M';
-               console.log(`[Diff Detect] OCR: "${diffText}" -> Match: "${diffMatch.bestMatch}"`);
+            diffCtx.drawImage(imgForCrop,
+              imgForCrop.naturalWidth * r_diff.x, imgForCrop.naturalHeight * r_diff.y,
+              imgForCrop.naturalWidth * r_diff.w, imgForCrop.naturalHeight * r_diff.h,
+              0, 0, diffCanvas.width, diffCanvas.height
+            );
+            
+            const diffImgData = diffCtx.getImageData(0, 0, diffCanvas.width, diffCanvas.height);
+            const data = diffImgData.data;
+            let r=0, g=0, b=0, count=0;
+            
+            for(let i=0; i<data.length; i+=4) {
+               r += data[i];
+               g += data[i+1];
+               b += data[i+2];
+               count++;
             }
-            
+            const avgColor = { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
+            console.log("[Color Detect] AvgRGB:", avgColor);
+
+            // 定義済み色との距離を比較
+            let detectedDiffKey = 'M'; // Default
+            let minColorDist = Infinity;
+
+            Object.keys(TARGET_COLORS).forEach(key => {
+              const target = TARGET_COLORS[key];
+              const dist = getColorDistance(avgColor, target.rgb);
+              if (dist < minColorDist) {
+                minColorDist = dist;
+                detectedDiffKey = key;
+              }
+            });
+            console.log("[Color Detect] Result:", detectedDiffKey, "Dist:", minColorDist);
             document.getElementById('up-diff').value = detectedDiffKey;
 
+
+            const worker = await Tesseract.createWorker('jpn+eng');
 
             // --- 1. 左上エリア (曲名) ---
             const r1 = {x:0.18, y:0.01, w:0.35, h:0.11};
