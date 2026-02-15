@@ -18,13 +18,16 @@
         --diff-expert: #DC5268;
         --diff-hard:    #E9B153;
         --fc-color:     #FF82FF;
+        --sidebar-width: 200px;
+        --active-color: #e8f0fe;
+        --active-border: #4285f4;
       }
       body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
-      .container { max-width: 1000px; margin: 0 auto; }
+      .container { max-width: 1200px; margin: 0 auto; }
       h2 { display: flex; align-items: center; gap: 10px; color: #444; }
       .material-symbols-outlined { font-size: 1.2rem; vertical-align: sub; }
       
-      /* 認証ボタン周り */
+      /* Auth & Buttons */
       .auth-section { text-align: right; margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
       .btn-auth {
         background-color: #4285f4; color: white; border: none; padding: 10px 20px;
@@ -58,7 +61,6 @@
       .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
       .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
       
-      /* Badges & Buttons on Card */
       .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
       
       .card-actions { position: absolute; top: 8px; left: 8px; display: flex; gap: 5px; z-index: 10; }
@@ -88,45 +90,49 @@
       .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
       .modal-content-img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
       
-      /* Form Modal Generic */
-      .modal-form-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 800px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
-      .modal-header { font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
-      .form-group { margin-bottom: 15px; }
+      /* Modal Form Generic */
+      .modal-form-content { background-color: #fff; padding: 0; border-radius: 12px; width: 100%; max-width: 1000px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; }
+      .modal-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+      .modal-body { display: flex; flex: 1; overflow: hidden; min-height: 400px; }
+      
+      /* Sidebar Layout (Upload & Edit) */
+      .sidebar { width: var(--sidebar-width); background: #fcfcfc; border-right: 1px solid #eee; overflow-y: auto; display: flex; flex-direction: column; }
+      .sidebar-item { padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: background 0.2s; position: relative; }
+      .sidebar-item:hover { background-color: #f0f0f0; }
+      .sidebar-item.active { background-color: var(--active-color); border-left: 4px solid var(--active-border); }
+      .sidebar-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; background: #ddd; flex-shrink: 0; }
+      .sidebar-info { overflow: hidden; font-size: 0.8rem; }
+      .sidebar-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+      .sidebar-status { font-size: 0.7rem; color: #666; }
+      .sidebar-status.error { color: #dc3545; }
+      .sidebar-status.done { color: #28a745; }
+      
+      /* Main Editor Area */
+      .editor-main { flex: 1; padding: 20px; overflow-y: auto; display: flex; gap: 20px; flex-wrap: wrap; }
+      .editor-preview { flex: 1; min-width: 300px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; position: relative; height: 400px; }
+      .editor-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      .editor-form { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px; }
+
+      .form-group { margin-bottom: 0; }
       .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.8rem; color:#555; }
-      .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+      .breakdown-row { display: flex; gap: 10px; align-items: center; }
+      .breakdown-item { flex: 1; display: flex; flex-direction: column; }
+      .breakdown-item input { text-align: center; }
+      .breakdown-label { font-size: 0.75rem; color: #666; text-align: center; margin-bottom: 4px; }
+
+      .total-miss-display { text-align: center; font-weight: bold; padding: 10px; background: #eee; border-radius: 8px; margin-top: 10px; }
+      .total-miss-val { font-size: 1.2rem; color: #333; }
+
+      .form-actions { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; background: #fff; }
       .btn-cancel { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
-      .btn-analyze { background-color: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; }
+      .btn-analyze { background-color: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; position: absolute; bottom: 10px; right: 10px; }
 
-      /* Upload Specific UI */
-      .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; color: #777; transition: all 0.2s; cursor: pointer; margin-bottom: 20px; background-color: #fcfcfc; }
+      /* Upload Start Screen */
+      .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; color: #777; transition: all 0.2s; cursor: pointer; margin: 20px; background-color: #fcfcfc; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
       .drop-zone:hover, .drop-zone.dragover { border-color: #007bff; background-color: #f0f7ff; color: #007bff; }
-      .drop-zone .material-symbols-outlined { font-size: 48px; display: block; margin-bottom: 10px; color: inherit; }
-      
-      #upload-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; width: 100%; }
-      .upload-item { display: flex; flex-direction: column; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.03); overflow: hidden; position: relative; }
-      .upload-item-header { padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
-      .upload-item-body { padding: 10px; display: flex; gap: 10px; }
-      .upload-item-img { width: 100px; height: 100px; flex-shrink: 0; background: #eee; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-      .upload-item-img img { width: 100%; height: 100%; object-fit: cover; }
-      .upload-item-fields { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
-      .btn-remove-item { background: none; border: none; color: #dc3545; cursor: pointer; padding: 4px; display: flex; }
-      .btn-remove-item:hover { background: rgba(220, 53, 69, 0.1); border-radius: 4px; }
-      
-      .upload-status { font-weight: bold; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
-      .upload-status.processing { background-color: #e2f0ff; color: #007bff; }
-      .upload-status.done { background-color: #d4edda; color: #155724; }
-      .upload-status.error { background-color: #f8d7da; color: #721c24; }
-
-      /* Edit Modal Layout */
-      .edit-layout { display: flex; gap: 20px; flex-wrap: wrap; }
-      .edit-preview { flex: 1; min-width: 250px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; position: relative; }
-      .edit-preview img { max-width: 100%; max-height: 400px; object-fit: contain; }
-      .edit-form { flex: 1; min-width: 250px; }
-
-      .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
-      .close-btn:hover { color: var(--fc-color); }
+      .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; }
     </style>
   </head>
   <body>
@@ -137,73 +143,149 @@
     </div>
 
     <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
-      <div class="modal-form-content" style="max-width: 900px;">
+      <div class="modal-form-content">
         <div class="modal-header">
-          <span><span class="material-symbols-outlined">cloud_upload</span> リザルト一括アップロード</span>
+          <span><span class="material-symbols-outlined">cloud_upload</span> 画像アップロード</span>
           <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
         </div>
         
-        <div id="drop-zone" class="drop-zone" onclick="document.getElementById('up-file').click()">
-          <span class="material-symbols-outlined">upload_file</span>
-          <div>クリックして画像を選択、または画像をここにドラッグ＆ドロップ</div>
-          <input type="file" id="up-file" accept="image/*" multiple style="display: none;">
+        <div id="upload-start-view" style="display: flex; flex: 1;">
+           <div id="drop-zone" class="drop-zone" onclick="document.getElementById('up-file').click()">
+              <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 10px;">upload_file</span>
+              <div>クリックして画像を選択、またはドラッグ＆ドロップ</div>
+              <div style="font-size:0.8rem; margin-top:5px; color:#999;">複数枚選択可能</div>
+              <input type="file" id="up-file" accept="image/*" multiple style="display: none;">
+           </div>
         </div>
 
-        <div id="upload-status-msg" style="margin-bottom:10px; font-weight:bold; color:#007bff;"></div>
+        <div id="upload-editor-view" class="modal-body" style="display: none;">
+          <div class="sidebar" id="upload-sidebar">
+            </div>
+          <div class="editor-main">
+             <div id="upload-empty-msg" style="margin: auto; color: #999;">左のリストから画像を選択してください</div>
+             
+             <div id="upload-edit-area" style="display: none; width: 100%; height: 100%; gap:20px; flex-wrap: wrap; display: flex;">
+                <div class="editor-preview">
+                    <img id="up-preview-img" src="">
+                    <div id="up-analyzing-overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.6); color:white; justify-content:center; align-items:center; z-index:10;">解析中...</div>
+                </div>
+                <div class="editor-form">
+                    <div class="form-group">
+                      <label>曲名</label>
+                      <input type="text" id="up-title" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>レベル</label>
+                            <input type="number" id="up-level" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>難易度</label>
+                            <select id="up-diff" style="width: 100%; box-sizing: border-box;">
+                                <option value="A">Append</option>
+                                <option value="M">Master</option>
+                                <option value="E">Expert</option>
+                                <option value="H">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                        <label style="text-align:center; margin-bottom:8px;">ミス内訳</label>
+                        <div class="breakdown-row">
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Good</span>
+                                <input type="number" id="up-good" min="0" value="0" oninput="recalcUploadTotal()">
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Bad</span>
+                                <input type="number" id="up-bad" min="0" value="0" oninput="recalcUploadTotal()">
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Miss</span>
+                                <input type="number" id="up-miss" min="0" value="0" oninput="recalcUploadTotal()">
+                            </div>
+                        </div>
+                        <div class="total-miss-display">
+                            合計ミス数: <span id="up-total-display" class="total-miss-val">0</span>
+                        </div>
+                    </div>
 
-        <div id="upload-list">
+                    <button class="btn-cancel" onclick="removeCurrentUploadItem()" style="background:#dc3545; color:white; margin-top:auto;">この画像を削除</button>
+                </div>
+             </div>
           </div>
+        </div>
 
-        <div class="form-actions">
-          <button class="btn-cancel" onclick="closeUploadModal()">閉じる</button>
-          <button class="btn-submit" id="btn-exec-upload" onclick="handleBatchUpload()" disabled>全てアップロード</button>
+        <div class="form-actions" id="upload-actions" style="display: none;">
+          <button class="btn-cancel" onclick="closeUploadModal()">キャンセル</button>
+          <button class="btn-submit" id="btn-exec-upload" onclick="handleBatchUpload()">全てアップロード</button>
         </div>
       </div>
     </div>
 
     <div id="editModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
-      <div class="modal-form-content" style="max-width: 800px;">
+      <div class="modal-form-content" style="max-width: 900px;">
         <div class="modal-header">
           <span><span class="material-symbols-outlined">edit</span> 情報編集</span>
           <span style="cursor:pointer;" onclick="closeEditModal()">&times;</span>
         </div>
         
-        <div class="edit-layout">
-            <div class="edit-preview">
-                <img id="edit-preview-img" src="" alt="Preview">
-                <div style="position: absolute; bottom: 10px; right: 10px;">
+        <div class="modal-body" style="padding: 20px;">
+            <div class="editor-main" style="padding:0;">
+                <div class="editor-preview">
+                    <img id="edit-preview-img" src="" alt="Preview">
                     <button class="btn-analyze" onclick="runEditAnalysis()">
                         <span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析
                     </button>
                 </div>
-            </div>
 
-            <div class="edit-form">
-                <input type="hidden" id="edit-id">
-                <input type="hidden" id="edit-original-parent">
-                
-                <div class="form-group">
-                  <label>曲名</label>
-                  <input type="text" id="edit-title" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1;">
-                        <label>レベル</label>
-                        <input type="number" id="edit-level" style="width: 100%; box-sizing: border-box;">
+                <div class="editor-form">
+                    <input type="hidden" id="edit-id">
+                    <input type="hidden" id="edit-original-parent">
+                    
+                    <div class="form-group">
+                      <label>曲名</label>
+                      <input type="text" id="edit-title" style="width: 100%; box-sizing: border-box;">
                     </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>難易度</label>
-                        <select id="edit-diff" style="width: 100%; box-sizing: border-box;">
-                            <option value="A">Append</option>
-                            <option value="M">Master</option>
-                            <option value="E">Expert</option>
-                            <option value="H">Hard</option>
-                        </select>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>レベル</label>
+                            <input type="number" id="edit-level" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>難易度</label>
+                            <select id="edit-diff" style="width: 100%; box-sizing: border-box;">
+                                <option value="A">Append</option>
+                                <option value="M">Master</option>
+                                <option value="E">Expert</option>
+                                <option value="H">Hard</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>ミス数</label>
-                    <input type="number" id="edit-miss" min="0" style="width: 100%; box-sizing: border-box;">
+                    
+                    <div id="edit-breakdown-area" class="form-group" style="display:none; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                        <label style="text-align:center; margin-bottom:8px;">解析結果 (内訳)</label>
+                        <div class="breakdown-row">
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Good</span>
+                                <input type="number" id="edit-good" min="0" value="0" oninput="recalcEditTotal()">
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Bad</span>
+                                <input type="number" id="edit-bad" min="0" value="0" oninput="recalcEditTotal()">
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Miss</span>
+                                <input type="number" id="edit-miss-detail" min="0" value="0" oninput="recalcEditTotal()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>合計ミス数</label>
+                        <input type="number" id="edit-total-miss" min="0" style="width: 100%; box-sizing: border-box; font-weight:bold;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -218,11 +300,9 @@
     <div class="container">
       <div class="auth-section">
         <span id="auth-status">未ログイン</span>
-        
         <button id="upload_button" class="btn-auth btn-upload" onclick="openUploadModal()" style="display: none;">
           <span class="material-symbols-outlined">add_photo_alternate</span> アップロード
         </button>
-
         <button id="authorize_button" class="btn-auth" onclick="handleAuthClick()">
           <span class="material-symbols-outlined">login</span> Googleでログイン
         </button>
@@ -245,7 +325,6 @@
             <option value="miss_desc">失点数 (多い順)</option>
           </select>
         </div>
-
         <div class="control-group">
           <label><span class="material-symbols-outlined">filter_alt</span> FC状況</label>
           <select id="filter-fc" onchange="updateView()">
@@ -254,7 +333,6 @@
             <option value="unfc">未FC (失点あり)</option>
           </select>
         </div>
-        
         <div class="control-group">
           <label><span class="material-symbols-outlined">remove_circle</span> 失点数</label>
           <select id="filter-miss" onchange="updateView()">
@@ -264,7 +342,6 @@
             <option value="range-11">11以上</option>
           </select>
         </div>
-
         <div class="control-group">
           <label><span class="material-symbols-outlined">speed</span> 難易度</label>
           <select id="filter-diff" onchange="updateView()">
@@ -275,17 +352,14 @@
             <option value="H">Hard</option>
           </select>
         </div>
-
         <div class="control-group">
           <label><span class="material-symbols-outlined">manage_search</span> 曲名検索</label>
           <input type="text" id="filter-title" placeholder="曲名を入力..." oninput="updateView()">
         </div>
-
         <div class="control-group">
           <label><span class="material-symbols-outlined">search</span> レベル検索</label>
           <input type="number" id="filter-level" placeholder="" oninput="updateView()">
         </div>
-
         <div class="control-group">
           <label><span class="material-symbols-outlined">star</span> 表示オプション</label>
           <div class="checkbox-wrapper">
@@ -311,10 +385,10 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
     <script>
-      // ↓↓↓ GCPで取得した値を設定してください ↓↓↓
+      // ↓↓↓ GCP Configuration ↓↓↓
       const CLIENT_ID = '966636096862-8hrrm5heb4g5r469veoels7u6ifjguuk.apps.googleusercontent.com';
       const API_KEY = 'AIzaSyC-m1rkHuJTmNK2k-s89bJFshvXCS5MZZ0';
-      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
       const SCOPES = 'https://www.googleapis.com/auth/drive';
@@ -324,12 +398,10 @@
       let gisInited = false;
       let allRecords = [];
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
-
-      // --- 楽曲DBデータ ---
+      
       let dbMusics = [];
       let dbDiffs = [];
       
-      // ページロード時にDBをロード
       window.onload = async function() {
         try {
           const [musicsResp, diffsResp] = await Promise.all([
@@ -338,63 +410,33 @@
           ]);
           dbMusics = await musicsResp.json();
           dbDiffs = await diffsResp.json();
-          console.log("DB Loaded:", dbMusics.length, dbDiffs.length);
         } catch (e) {
           console.error("DB Load Error:", e);
         }
       };
 
-      // --- 認証関連 ---
-
-      function gapiLoaded() {
-        gapi.load('client', initializeGapiClient);
-      }
-
+      function gapiLoaded() { gapi.load('client', initializeGapiClient); }
       async function initializeGapiClient() {
-        await gapi.client.init({
-          apiKey: API_KEY,
-          discoveryDocs: [DISCOVERY_DOC],
-        });
+        await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
         gapiInited = true;
-        maybeEnableButtons();
       }
-
       function gisLoaded() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: '', 
-        });
+        tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' });
         gisInited = true;
-        maybeEnableButtons();
-      }
-
-      function maybeEnableButtons() {
-        if (gapiInited && gisInited) {
-          // 準備完了
-        }
       }
 
       function handleAuthClick() {
         tokenClient.callback = async (resp) => {
-          if (resp.error !== undefined) {
-            throw (resp);
-          }
+          if (resp.error) throw resp;
           setAuthUI(true);
           await fetchDataFromDrive();
         };
-
-        if (gapi.client.getToken() === null) {
-          tokenClient.requestAccessToken({prompt: 'consent'});
-        } else {
-          tokenClient.requestAccessToken({prompt: ''});
-        }
+        tokenClient.requestAccessToken({prompt: gapi.client.getToken() === null ? 'consent' : ''});
       }
 
       function handleSignoutClick() {
-        const token = gapi.client.getToken();
-        if (token !== null) {
-          google.accounts.oauth2.revoke(token.access_token);
+        if (gapi.client.getToken()) {
+          google.accounts.oauth2.revoke(gapi.client.getToken().access_token);
           gapi.client.setToken('');
           setAuthUI(false);
           document.getElementById('result-count').innerText = 'ログアウトしました';
@@ -410,875 +452,612 @@
         document.getElementById('auth-status').innerText = isLoggedIn ? 'ログイン済み' : '未ログイン';
       }
 
-      // --- Drive データ取得ロジック ---
-
+      // --- Drive Data Logic ---
       async function fetchDataFromDrive() {
         const loader = document.getElementById('loader');
         loader.style.display = 'flex';
         document.getElementById('result-count').innerText = 'データ取得中...';
-        document.getElementById('loader-text').innerText = 'フォルダ構造を解析中...';
         
         try {
-          const ROOT_FOLDER_NAME = "プロセカリザルト";
-          const SOURCE_PATH = ["FC"];
-
-          // 1. ルートフォルダ特定
-          const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
-          if (!rootFolder) {
-            allRecords = [];
-            onDataLoaded();
-            return;
-          }
-
-          let currentFolder = rootFolder;
-          for (const name of SOURCE_PATH) {
-             const found = await getFolderByName(name, currentFolder.id);
-             if (!found) {
-               allRecords = [];
-               onDataLoaded();
-               return;
-             }
-             currentFolder = found;
-          }
-          const sourceFolderId = currentFolder.id;
-
-          // 2. 楽曲フォルダ取得
-          document.getElementById('loader-text').innerText = '楽曲情報を取得中...';
-          const folderQuery = `'${sourceFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
-          const songFolders = await fetchAllDriveItems(folderQuery, "id, name");
+          const root = await getFolderByName("プロセカリザルト");
+          if (!root) { allRecords = []; onDataLoaded(); return; }
+          
+          let current = root;
+          const fcFolder = await getFolderByName("FC", root.id);
+          if (!fcFolder) { allRecords = []; onDataLoaded(); return; }
+          
+          document.getElementById('loader-text').innerText = 'フォルダ構造を解析中...';
+          const songFolders = await fetchAllDriveItems(`'${fcFolder.id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`, "id, name");
           
           const folderMap = new Map();
-          songFolders.forEach(folder => {
-            const metadata = parseFolderTitle(folder.name);
-            if (metadata) {
-              folderMap.set(folder.id, { ...metadata, folderId: folder.id });
-            }
+          songFolders.forEach(f => {
+            const m = parseFolderTitle(f.name);
+            if (m) folderMap.set(f.id, { ...m, folderId: f.id });
           });
 
-          if (songFolders.length === 0) {
-            allRecords = [];
-            onDataLoaded();
-            return;
-          }
+          if (songFolders.length === 0) { allRecords = []; onDataLoaded(); return; }
 
-          // 3. 画像ファイル取得
-          document.getElementById('loader-text').innerText = 'リザルト画像を検索中...';
-          const fileQuery = `name contains 'FC' and mimeType != 'application/vnd.google-apps.folder' and trashed = false`;
-          const candidateFiles = await fetchAllDriveItems(fileQuery, "id, name, parents, thumbnailLink");
+          document.getElementById('loader-text').innerText = '画像を取得中...';
+          const files = await fetchAllDriveItems(`name contains 'FC' and mimeType != 'application/vnd.google-apps.folder' and trashed = false`, "id, name, parents, thumbnailLink");
 
-          // 4. データ結合
           const records = [];
-          candidateFiles.forEach(file => {
-            if (!file.parents || file.parents.length === 0) return;
-            const parentId = file.parents.find(p => folderMap.has(p));
-            
-            if (parentId) {
-              const songInfo = folderMap.get(parentId);
-              const missCount = parseScore(file.name);
-
-              if (missCount !== null) {
+          files.forEach(file => {
+            if (!file.parents) return;
+            const pid = file.parents.find(p => folderMap.has(p));
+            if (pid) {
+              const info = folderMap.get(pid);
+              const miss = parseScore(file.name);
+              if (miss !== null) {
                 records.push({
-                  id: file.id,
-                  parentId: parentId, // フォルダID
-                  title: songInfo.title,
-                  level: songInfo.level,
-                  difficulty: songInfo.difficulty,
-                  difficultyRaw: songInfo.rawDiff,
-                  missCount: missCount,
-                  isFC: (missCount === 0),
-                  thumbnail: file.thumbnailLink || null
+                  id: file.id, parentId: pid, title: info.title, level: info.level,
+                  difficulty: info.difficulty, difficultyRaw: info.rawDiff,
+                  missCount: miss, isFC: (miss === 0), thumbnail: file.thumbnailLink || null
                 });
               }
             }
           });
-
           allRecords = records;
           onDataLoaded();
-
         } catch (e) {
           console.error(e);
-          alert("データ取得中にエラーが発生しました: " + e.message);
+          alert("エラーが発生しました: " + e.message);
           loader.style.display = 'none';
         }
       }
-
-      // --- Drive API Helper Functions (Read) ---
 
       async function fetchAllDriveItems(query, fields) {
         let items = [];
         let pageToken = null;
         do {
-          const response = await gapi.client.drive.files.list({
-            q: query,
-            fields: `nextPageToken, files(${fields})`,
-            pageSize: 1000,
-            pageToken: pageToken
-          });
-          const result = response.result;
-          if (result.files && result.files.length > 0) {
-            items = items.concat(result.files);
-          }
-          pageToken = result.nextPageToken;
+          const res = await gapi.client.drive.files.list({ q: query, fields: `nextPageToken, files(${fields})`, pageSize: 1000, pageToken: pageToken });
+          if (res.result.files) items = items.concat(res.result.files);
+          pageToken = res.result.nextPageToken;
         } while (pageToken);
         return items;
       }
-
       async function getFolderByName(name, parentId = null) {
-        let query = `mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
-        if (parentId) {
-          query += ` and '${parentId}' in parents`;
-        }
-        const response = await gapi.client.drive.files.list({
-          q: query,
-          fields: 'files(id, name)',
-          pageSize: 1
-        });
-        const files = response.result.files;
-        return (files && files.length > 0) ? files[0] : null;
+        let q = `mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
+        if (parentId) q += ` and '${parentId}' in parents`;
+        const res = await gapi.client.drive.files.list({ q: q, fields: 'files(id, name)', pageSize: 1 });
+        return (res.result.files && res.result.files.length > 0) ? res.result.files[0] : null;
       }
-
-      // --- Drive API Helper Functions (Write: Upload/Delete/Update) ---
-
-      async function findOrCreateFolder(name, parentId = null) {
-        const existing = await getFolderByName(name, parentId);
-        if (existing) return existing;
-
-        const fileMetadata = {
-          'name': name,
-          'mimeType': 'application/vnd.google-apps.folder'
-        };
-        if (parentId) {
-          fileMetadata.parents = [parentId];
-        }
-        const response = await gapi.client.drive.files.create({
-          resource: fileMetadata,
-          fields: 'id, name'
-        });
-        return response.result;
-      }
-
-      async function deleteFile(fileId) {
-        await gapi.client.drive.files.delete({
-          fileId: fileId
-        });
-      }
-
-      async function moveAndRenameFile(fileId, newName, newParentId, oldParentId) {
-          const body = { name: newName };
-          const params = {
-              fileId: fileId,
-              resource: body
-          };
-          if (newParentId !== oldParentId) {
-              params.addParents = newParentId;
-              params.removeParents = oldParentId;
-          }
-          
-          await gapi.client.drive.files.update(params);
-      }
-
-      // --- Upload & Analysis Logic (Multi) ---
-
-      let uploadQueue = []; // { id, file, status, data: {title, level, diff, miss} }
-
-      // Drag & Drop Handling
-      const dropZone = document.getElementById('drop-zone');
-
-      dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-      });
-
-      dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-      });
-
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
-          handleFiles(e.dataTransfer.files);
-        }
-      });
-
-      function openUploadModal() {
-        document.getElementById('uploadModal').style.display = 'flex';
-        document.getElementById('up-file').value = "";
-        document.getElementById('upload-list').innerHTML = "";
-        document.getElementById('upload-status-msg').innerText = "";
-        document.getElementById('btn-exec-upload').disabled = true;
-        uploadQueue = [];
-      }
-
-      function closeUploadModal() {
-        document.getElementById('uploadModal').style.display = 'none';
+      async function findOrCreateFolder(name, parentId) {
+        const ex = await getFolderByName(name, parentId);
+        if (ex) return ex;
+        const meta = { 'name': name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': parentId ? [parentId] : [] };
+        const res = await gapi.client.drive.files.create({ resource: meta, fields: 'id, name' });
+        return res.result;
       }
 
       // --- OCR Logic ---
-      
-      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'filter-standard') {
-        const canvas = document.createElement('canvas');
-        const w = imageElement.naturalWidth;
-        const h = imageElement.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        
-        if (type === 'threshold-diff') {
-            const scale = 1.5;
-            canvas.width = w * wRatio * scale;
-            canvas.height = h * hRatio * scale;
-            ctx.drawImage(imageElement, w * xRatio, h * yRatio, w * wRatio, h * hRatio, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-                if (gray > 180) {
-                    data[i] = data[i+1] = data[i+2] = 0; 
-                } else {
-                    data[i] = data[i+1] = data[i+2] = 255;
-                }
+      async function cropImage(img, x, y, w, h, type = 'std') {
+        const cvs = document.createElement('canvas');
+        const ctx = cvs.getContext('2d');
+        const nw = img.naturalWidth, nh = img.naturalHeight;
+        if (type === 'bin') {
+            const s = 1.5; cvs.width = nw*w*s; cvs.height = nh*h*s;
+            ctx.drawImage(img, nw*x, nh*y, nw*w, nh*h, 0, 0, cvs.width, cvs.height);
+            let d = ctx.getImageData(0,0,cvs.width,cvs.height), dt = d.data;
+            for(let i=0; i<dt.length; i+=4) {
+                let g = 0.299*dt[i] + 0.587*dt[i+1] + 0.114*dt[i+2];
+                dt[i] = dt[i+1] = dt[i+2] = (g > 180) ? 0 : 255;
             }
-            ctx.putImageData(imageData, 0, 0);
+            ctx.putImageData(d,0,0);
         } else {
-            canvas.width = w * wRatio;
-            canvas.height = h * hRatio;
+            cvs.width = nw*w; cvs.height = nh*h;
             ctx.filter = 'grayscale(100%) contrast(150%)';
-            ctx.drawImage(imageElement, w * xRatio, h * yRatio, w * wRatio, h * hRatio, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, nw*x, nh*y, nw*w, nh*h, 0, 0, cvs.width, cvs.height);
         }
-        return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        return new Promise(r => cvs.toBlob(r, 'image/png'));
       }
 
-      function normalizeString(str) {
-        if (!str) return "";
-        return str
-            .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
-                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-            })
-            .toLowerCase()
-            .replace(/[\s\-_]/g, '');
-      }
-
-      function levenshteinDistance(s1, s2) {
-        if (s1.length > s2.length) [s1, s2] = [s2, s1];
-        let distances = Array.from({ length: s1.length + 1 }, (_, i) => i);
-        for (let i2 = 0; i2 < s2.length; i2++) {
-            let newDistances = [i2 + 1];
-            for (let i1 = 0; i1 < s1.length; i1++) {
-                if (s1[i1] === s2[i2]) {
-                    newDistances.push(distances[i1]);
-                } else {
-                    newDistances.push(1 + Math.min(distances[i1], distances[i1 + 1], newDistances[newDistances.length - 1]));
-                }
-            }
-            distances = newDistances;
-        }
-        return distances[distances.length - 1];
-      }
-
-      function findBestMatchMusic(ocrText) {
-        if (!dbMusics || dbMusics.length === 0) return null;
-        const target = normalizeString(ocrText);
-        if (target.length === 0) return null;
-        let bestMatch = null;
-        let minScore = Infinity; 
-        for (const music of dbMusics) {
-            const dbTitleNorm = normalizeString(music.title);
-            const dist = levenshteinDistance(target, dbTitleNorm);
-            const score = dist / Math.max(target.length, dbTitleNorm.length);
-            if (score < minScore) {
-                minScore = score;
-                bestMatch = music;
-            }
-        }
-        return bestMatch; 
-      }
-
-      function getLevelFromDb(musicId, diffKey) {
-          if (!musicId || !diffKey || !dbDiffs) return null;
-          const diffEntry = dbDiffs.find(d => d.musicId === musicId && d.musicDifficulty === diffKey);
-          return diffEntry ? diffEntry.playLevel : null;
-      }
-
-      // コア解析ロジック（img要素を受け取る）
-      async function analyzeLoadedImage(imgElement, worker) {
+      async function analyzeLoadedImage(img, worker) {
          try {
-            // 1. Diff
-            const diffBlob = await cropImage(imgElement, 0.20, 0.07, 0.10, 0.04, 'threshold-diff');
-            const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
-            const diffText = diffRet.data.text.toUpperCase();
-            
-            let detectedDiffCode = "E"; // default
-            let detectedDiffKey = "expert";
-            if (diffText.match(/A?P{2}E?N?D?/)) { detectedDiffCode = "A"; detectedDiffKey = "append"; }
-            else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
-            else if (diffText.includes("EXPERT")) { detectedDiffCode = "E"; detectedDiffKey = "expert"; }
-            else if (diffText.includes("HARD")) { detectedDiffCode = "H"; detectedDiffKey = "hard"; }
+            // Diff
+            const diffB = await cropImage(img, 0.20, 0.07, 0.10, 0.04, 'bin');
+            const diffR = await worker.recognize(diffB, { lang: 'eng' }); 
+            const dT = diffR.data.text.toUpperCase();
+            let dCode = "E", dKey = "expert";
+            if (dT.match(/A?P{2}E?N?D?/)) { dCode = "A"; dKey = "append"; }
+            else if (dT.includes("MASTER")) { dCode = "M"; dKey = "master"; }
+            else if (dT.includes("EXPERT")) { dCode = "E"; dKey = "expert"; }
+            else if (dT.includes("HARD")) { dCode = "H"; dKey = "hard"; }
 
-            // 2. Title
-            const titleBlob = await cropImage(imgElement, 0.19, 0.01, 0.32, 0.05, 'filter-standard');
-            const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
-            const titleText = titleRet.data.text;
+            // Title
+            const titleB = await cropImage(img, 0.19, 0.01, 0.32, 0.05);
+            const titleR = await worker.recognize(titleB, { lang: 'jpn' });
+            let title = titleR.data.text;
+            let mId = null;
             
-            const matchedMusic = findBestMatchMusic(titleText);
-            const finalTitle = matchedMusic ? matchedMusic.title : titleText.replace(/\r?\n/g, '').trim();
-            const musicId = matchedMusic ? matchedMusic.id : null;
+            // Fuzzy Match
+            if (dbMusics.length > 0) {
+                const norm = s => s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).toLowerCase().replace(/[\s\-_]/g,'');
+                const tNorm = norm(title);
+                if (tNorm.length > 0) {
+                    let best = null, minS = Infinity;
+                    const lev = (a,b) => {
+                        if(a.length>b.length)[a,b]=[b,a];
+                        let r=Array.from({length:a.length+1},(_,i)=>i);
+                        for(let j=0;j<b.length;j++){let n=[j+1];for(let i=0;i<a.length;i++)n.push(a[i]===b[j]?r[i]:1+Math.min(r[i],r[i+1],n[n.length-1]));r=n;}
+                        return r[r.length-1];
+                    };
+                    for(const m of dbMusics){
+                        const dist = lev(tNorm, norm(m.title));
+                        const score = dist/Math.max(tNorm.length, norm(m.title).length);
+                        if(score < minS){ minS=score; best=m; }
+                    }
+                    if(best) { title = best.title; mId = best.id; }
+                }
+            }
+            title = title.replace(/\r?\n/g, '').trim();
 
-            // 3. Level
+            // Level
             let level = "";
-            if (musicId) {
-                level = getLevelFromDb(musicId, detectedDiffKey) || "";
+            if (mId) {
+                const dE = dbDiffs.find(d => d.musicId === mId && d.musicDifficulty === dKey);
+                if(dE) level = dE.playLevel;
             }
 
-            // 4. Miss
-            const missBlob = await cropImage(imgElement, 0.10, 0.55, 0.20, 0.28, 'filter-standard');
-            const missRet = await worker.recognize(missBlob, { lang: 'jpn' });
-            const missText = missRet.data.text;
-            const lines = missText.split('\n');
-            let countGood = 0, countBad = 0, countMiss = 0;
-            
-            const parseLine = (line, regex) => {
-                if (regex.test(line)) {
-                    const nums = line.match(/\d+/g);
-                    if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
-                }
-                return 0;
-            };
-            const regGood = /G[O0QD]{2}D/i; 
-            const regBad  = /BAD/i;
-            const regMiss = /MISS/i;
-            lines.forEach(line => {
-              if (regGood.test(line)) countGood = parseLine(line, regGood);
-              if (regBad.test(line))  countBad  = parseLine(line, regBad);
-              if (regMiss.test(line)) countMiss = parseLine(line, regMiss);
+            // Miss (Detail)
+            const missB = await cropImage(img, 0.10, 0.55, 0.20, 0.28);
+            const missR = await worker.recognize(missB, { lang: 'jpn' });
+            const lines = missR.data.text.split('\n');
+            let cG=0, cB=0, cM=0;
+            const parse = (l,r) => { if(r.test(l)){ const n=l.match(/\d+/g); if(n) return parseInt(n[n.length-1],10); } return 0; };
+            lines.forEach(l => {
+              if (/G[O0QD]{2}D/i.test(l)) cG = parse(l, /G[O0QD]{2}D/i);
+              if (/BAD/i.test(l))  cB  = parse(l, /BAD/i);
+              if (/MISS/i.test(l)) cM = parse(l, /MISS/i);
             });
-            const totalMiss = countGood + countBad + countMiss;
+            const total = cG + cB + cM;
 
-            return {
-                title: finalTitle,
-                level: level,
-                diff: detectedDiffCode,
-                miss: totalMiss,
-                musicId: musicId
-            };
-        } catch (e) {
-            console.error(e);
-            return null;
-        }
+            return { title, level, diff: dCode, miss: total, details: {good: cG, bad: cB, miss: cM}, musicId: mId };
+        } catch (e) { console.error(e); return null; }
       }
-
-      // ファイルオブジェクトから画像生成して解析
+      
       async function analyzeImageFile(file, worker) {
-        return new Promise((resolve) => {
+        return new Promise(r => {
             const img = new Image();
-            img.onload = async function() {
-                const res = await analyzeLoadedImage(img, worker);
-                resolve(res);
-            };
+            img.onload = async () => r(await analyzeLoadedImage(img, worker));
             img.src = URL.createObjectURL(file);
         });
       }
 
-      // ファイル選択・ドロップ時の処理
-      document.getElementById('up-file').addEventListener('change', (e) => handleFiles(e.target.files));
+      // --- Upload State Management ---
+      let uploadQueue = []; // { id, file, result: {title, level, diff, miss, details...} }
+      let currentUploadIndex = -1;
+
+      const dropZone = document.getElementById('drop-zone');
+      dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+      dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+      document.getElementById('up-file').addEventListener('change', e => handleFiles(e.target.files));
+
+      function openUploadModal() {
+        document.getElementById('uploadModal').style.display = 'flex';
+        // Reset View
+        uploadQueue = [];
+        currentUploadIndex = -1;
+        document.getElementById('upload-start-view').style.display = 'flex';
+        document.getElementById('upload-editor-view').style.display = 'none';
+        document.getElementById('upload-actions').style.display = 'none';
+        document.getElementById('up-file').value = "";
+      }
+      function closeUploadModal() { document.getElementById('uploadModal').style.display = 'none'; }
 
       async function handleFiles(files) {
         if (files.length === 0) return;
-
-        const listContainer = document.getElementById('upload-list');
-        const statusMsg = document.getElementById('upload-status-msg');
-        const execBtn = document.getElementById('btn-exec-upload');
-
-        execBtn.disabled = true;
-        statusMsg.innerText = "画像を解析中... (そのままお待ちください)";
+        
+        // Switch View
+        document.getElementById('upload-start-view').style.display = 'none';
+        document.getElementById('upload-editor-view').style.display = 'flex'; // sidebar + main
+        document.getElementById('upload-actions').style.display = 'flex';
 
         const worker = await Tesseract.createWorker(['jpn', 'eng']);
-
+        
+        // Initialize Queue Items
+        const startIndex = uploadQueue.length;
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const queueId = Date.now() + "_" + i;
-            
-            // UI作成 (カードスタイル)
-            const div = document.createElement('div');
-            div.className = 'upload-item';
-            div.id = `item-${queueId}`;
-            div.innerHTML = `
-                <div class="upload-item-header">
-                   <div id="status-${queueId}" class="upload-status processing">解析中...</div>
-                   <button class="btn-remove-item" onclick="removeUploadItem('${queueId}')">
-                     <span class="material-symbols-outlined">delete</span>
-                   </button>
-                </div>
-                <div class="upload-item-body">
-                    <div class="upload-item-img">
-                        <img src="${URL.createObjectURL(file)}">
-                    </div>
-                    <div class="upload-item-fields">
-                        <div>
-                            <input type="text" id="title-${queueId}" placeholder="曲名" style="width:100%; box-sizing:border-box; font-size:0.9rem;">
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <input type="number" id="level-${queueId}" placeholder="Lv" style="width:50px; box-sizing:border-box;">
-                            <select id="diff-${queueId}" style="flex:1;">
-                                <option value="A">Append</option>
-                                <option value="M">Master</option>
-                                <option value="E">Expert</option>
-                                <option value="H">Hard</option>
-                            </select>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:5px;">
-                            <label style="font-size:0.8rem; margin:0;">Miss:</label>
-                            <input type="number" id="miss-${queueId}" min="0" style="flex:1; box-sizing:border-box;">
-                        </div>
-                    </div>
-                </div>
-            `;
-            listContainer.appendChild(div);
-
-            // 解析実行
-            const result = await analyzeImageFile(file, worker);
-            
-            // 結果反映
-            if (result) {
-                document.getElementById(`title-${queueId}`).value = result.title;
-                document.getElementById(`level-${queueId}`).value = result.level;
-                document.getElementById(`diff-${queueId}`).value = result.diff;
-                document.getElementById(`miss-${queueId}`).value = result.miss;
-                document.getElementById(`status-${queueId}`).innerText = "OK";
-                document.getElementById(`status-${queueId}`).className = "upload-status done";
-
-                const diffSelect = document.getElementById(`diff-${queueId}`);
-                diffSelect.onchange = function() {
-                    if (result.musicId) {
-                         const map = {'A':'append', 'M':'master', 'E':'expert', 'H':'hard'};
-                         const newLevel = getLevelFromDb(result.musicId, map[this.value]);
-                         if (newLevel) document.getElementById(`level-${queueId}`).value = newLevel;
-                    }
-                };
-            } else {
-                document.getElementById(`status-${queueId}`).innerText = "解析失敗";
-                document.getElementById(`status-${queueId}`).className = "upload-status error";
-            }
-
+            const id = Date.now() + "_" + i;
             uploadQueue.push({
-                id: queueId,
+                id: id,
                 file: file,
-                musicId: result ? result.musicId : null
+                status: 'pending',
+                data: { title:'', level:'', diff:'E', miss:0, details:{good:0, bad:0, miss:0}, musicId:null }
             });
         }
+        
+        renderSidebar();
+        if (startIndex === 0 && uploadQueue.length > 0) selectUploadItem(0);
 
-        await worker.terminate();
-        statusMsg.innerText = "解析が完了しました。内容を確認・修正してアップロードしてください。";
-        checkUploadButton();
-      }
-
-      function removeUploadItem(queueId) {
-        const el = document.getElementById(`item-${queueId}`);
-        if(el) el.remove();
-        uploadQueue = uploadQueue.filter(q => q.id !== queueId);
-        checkUploadButton();
-      }
-
-      function checkUploadButton() {
-        const btn = document.getElementById('btn-exec-upload');
-        btn.disabled = uploadQueue.length === 0;
-        if(uploadQueue.length > 0) {
-            btn.innerText = `全てアップロード (${uploadQueue.length}件)`;
-        } else {
-            btn.innerText = "全てアップロード";
+        // Run Analysis sequentially or parallel (doing seq for safety)
+        for (let i = startIndex; i < uploadQueue.length; i++) {
+            const item = uploadQueue[i];
+            updateSidebarStatus(i, '解析中...');
+            
+            const res = await analyzeImageFile(item.file, worker);
+            if (res) {
+                item.data = res;
+                item.status = 'done';
+                updateSidebarStatus(i, 'OK', 'done');
+            } else {
+                item.status = 'error';
+                updateSidebarStatus(i, '失敗', 'error');
+            }
+            
+            // If this item is currently selected, update form
+            if (currentUploadIndex === i) populateUploadForm(i);
         }
+        await worker.terminate();
+        updateUploadBtn();
+      }
+
+      function renderSidebar() {
+        const sb = document.getElementById('upload-sidebar');
+        sb.innerHTML = '';
+        uploadQueue.forEach((item, idx) => {
+           const div = document.createElement('div');
+           div.className = `sidebar-item ${idx === currentUploadIndex ? 'active' : ''}`;
+           div.onclick = () => selectUploadItem(idx);
+           div.innerHTML = `
+              <img src="${URL.createObjectURL(item.file)}" class="sidebar-thumb">
+              <div class="sidebar-info">
+                 <div class="sidebar-title" id="sb-title-${idx}">${item.data.title || '（未解析）'}</div>
+                 <div class="sidebar-status" id="sb-status-${idx}">${item.status === 'pending' ? '待機中' : (item.status==='done'?'OK':'エラー')}</div>
+              </div>
+           `;
+           sb.appendChild(div);
+        });
+      }
+
+      function updateSidebarStatus(idx, text, type) {
+          const el = document.getElementById(`sb-status-${idx}`);
+          if(el) {
+              el.innerText = text;
+              el.className = `sidebar-status ${type || ''}`;
+          }
+          const tEl = document.getElementById(`sb-title-${idx}`);
+          if(tEl && uploadQueue[idx].data.title) tEl.innerText = uploadQueue[idx].data.title;
+      }
+
+      function selectUploadItem(idx) {
+        // Save current if needed? No, input events update data directly.
+        currentUploadIndex = idx;
+        renderSidebar(); // update active class
+        populateUploadForm(idx);
+      }
+
+      function populateUploadForm(idx) {
+        const item = uploadQueue[idx];
+        if (!item) return;
+        
+        document.getElementById('upload-empty-msg').style.display = 'none';
+        document.getElementById('upload-edit-area').style.display = 'flex';
+        
+        document.getElementById('up-preview-img').src = URL.createObjectURL(item.file);
+        
+        // Populate inputs
+        const d = item.data;
+        document.getElementById('up-title').value = d.title;
+        document.getElementById('up-level').value = d.level;
+        document.getElementById('up-diff').value = d.diff;
+        
+        // Breakdown
+        document.getElementById('up-good').value = d.details.good;
+        document.getElementById('up-bad').value = d.details.bad;
+        document.getElementById('up-miss').value = d.details.miss;
+        document.getElementById('up-total-display').innerText = d.miss;
+
+        // Attach Live Listeners
+        ['up-title', 'up-level', 'up-diff'].forEach(id => {
+            document.getElementById(id).oninput = function() {
+                if(id==='up-title') {
+                    item.data.title = this.value; 
+                    document.getElementById(`sb-title-${idx}`).innerText = this.value || '(名称未設定)';
+                }
+                if(id==='up-level') item.data.level = this.value;
+                if(id==='up-diff') {
+                     item.data.diff = this.value;
+                     if (item.data.musicId) {
+                         const map = {'A':'append', 'M':'master', 'E':'expert', 'H':'hard'};
+                         const nl = getLevelFromDb(item.data.musicId, map[this.value]);
+                         if(nl) {
+                             document.getElementById('up-level').value = nl;
+                             item.data.level = nl;
+                         }
+                     }
+                }
+            }
+        });
+      }
+      
+      function recalcUploadTotal() {
+          if (currentUploadIndex < 0) return;
+          const g = parseInt(document.getElementById('up-good').value) || 0;
+          const b = parseInt(document.getElementById('up-bad').value) || 0;
+          const m = parseInt(document.getElementById('up-miss').value) || 0;
+          const total = g + b + m;
+          
+          document.getElementById('up-total-display').innerText = total;
+          
+          // Update Data Store
+          uploadQueue[currentUploadIndex].data.details = { good: g, bad: b, miss: m };
+          uploadQueue[currentUploadIndex].data.miss = total;
+      }
+
+      function removeCurrentUploadItem() {
+          if (currentUploadIndex < 0) return;
+          uploadQueue.splice(currentUploadIndex, 1);
+          currentUploadIndex = -1;
+          renderSidebar();
+          if (uploadQueue.length > 0) selectUploadItem(0);
+          else {
+              document.getElementById('upload-edit-area').style.display = 'none';
+              document.getElementById('upload-empty-msg').style.display = 'block';
+              document.getElementById('upload-actions').style.display = 'none';
+              document.getElementById('upload-start-view').style.display = 'flex'; // Back to drop zone
+          }
+          updateUploadBtn();
+      }
+
+      function updateUploadBtn() {
+          const btn = document.getElementById('btn-exec-upload');
+          btn.innerText = uploadQueue.length ? `全てアップロード (${uploadQueue.length}件)` : '全てアップロード';
+          btn.disabled = uploadQueue.length === 0;
+      }
+
+      function getLevelFromDb(mid, diffKey) {
+          const e = dbDiffs.find(d => d.musicId === mid && d.musicDifficulty === diffKey);
+          return e ? e.playLevel : null;
       }
 
       async function handleBatchUpload() {
-        if (uploadQueue.length === 0) return;
+          if(!uploadQueue.length) return;
+          const btn = document.getElementById('btn-exec-upload');
+          btn.disabled = true; btn.innerText = "アップロード中...";
+          
+          const root = await findOrCreateFolder("プロセカリザルト");
+          const fcF = await findOrCreateFolder("FC", root.id);
+          
+          let success = 0;
+          const token = gapi.client.getToken().access_token;
+          
+          // Process loop
+          const toProcess = [...uploadQueue];
+          for (const item of toProcess) {
+              const d = item.data;
+              if (!d.title || !d.level) continue; // Skip incomplete
 
-        const btn = document.getElementById('btn-exec-upload');
-        btn.disabled = true;
-        btn.innerText = "アップロード中...";
-        
-        let successCount = 0;
-        const accessToken = gapi.client.getToken().access_token;
+              try {
+                  const folderName = `${d.level}${d.diff} ${d.title}`;
+                  const sFolder = await findOrCreateFolder(folderName, fcF.id);
+                  const fileName = (d.miss === 0) ? "FC" : `FC-${d.miss}`;
+                  
+                  const meta = { 'name': fileName, 'parents': [sFolder.id] };
+                  const form = new FormData();
+                  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+                  form.append('file', item.file);
 
-        try {
-            const rootFolder = await findOrCreateFolder("プロセカリザルト");
-            const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
-
-            // キューのコピーを作成してループ（削除されてもいいように）
-            const currentQueue = [...uploadQueue];
-
-            for (const item of currentQueue) {
-                // DOMが存在するか確認（削除済みならスキップ）
-                const titleEl = document.getElementById(`title-${item.id}`);
-                if (!titleEl) continue;
-
-                const title = titleEl.value.trim();
-                const level = document.getElementById(`level-${item.id}`).value.trim();
-                const diff = document.getElementById(`diff-${item.id}`).value;
-                const miss = document.getElementById(`miss-${item.id}`).value;
-                const statusLabel = document.getElementById(`status-${item.id}`);
-
-                if (!title || !level || !miss) {
-                    statusLabel.innerText = "未入力";
-                    statusLabel.className = "upload-status error";
-                    continue;
-                }
-
-                statusLabel.innerText = "送信中...";
-                statusLabel.className = "upload-status processing";
-                
-                try {
-                    const songFolderName = `${level}${diff} ${title}`;
-                    const songFolder = await findOrCreateFolder(songFolderName, fcFolder.id);
-                    const fileName = (parseInt(miss) === 0) ? "FC" : `FC-${miss}`;
-
-                    const metadata = {
-                        'name': fileName,
-                        'parents': [songFolder.id]
-                    };
-                    const form = new FormData();
-                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                    form.append('file', item.file);
-
-                    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                        method: 'POST',
-                        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-                        body: form
-                    });
-
-                    if (!response.ok) throw new Error(response.statusText);
-                    
-                    // 成功したらリストから削除
-                    removeUploadItem(item.id);
-                    successCount++;
-
-                } catch (e) {
-                    console.error(e);
-                    statusLabel.innerText = "エラー";
-                    statusLabel.className = "upload-status error";
-                }
-            }
-
-            if (uploadQueue.length === 0) {
-                alert(`アップロード完了 (${successCount}件)`);
-                closeUploadModal();
-                await fetchDataFromDrive();
-            } else {
-                alert(`${successCount}件 成功しました。残りのエラー項目を確認してください。`);
-            }
-
-        } catch (e) {
-            console.error(e);
-            alert("全体処理中にエラーが発生しました: " + e.message);
-        } finally {
-            checkUploadButton();
-        }
+                  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                      method: 'POST',
+                      headers: new Headers({ 'Authorization': 'Bearer ' + token }),
+                      body: form
+                  });
+                  if(!res.ok) throw new Error("Upload failed");
+                  
+                  // Success: remove from queue
+                  const idx = uploadQueue.findIndex(q => q.id === item.id);
+                  if(idx > -1) uploadQueue.splice(idx, 1);
+                  success++;
+              } catch(e) {
+                  console.error(e);
+              }
+          }
+          
+          if (uploadQueue.length === 0) {
+              alert(`アップロード完了 (${success}件)`);
+              closeUploadModal();
+              await fetchDataFromDrive();
+          } else {
+              alert(`${success}件完了。エラー項目が残っています。`);
+              renderSidebar();
+              selectUploadItem(0);
+              updateUploadBtn();
+          }
       }
 
       // --- Edit Logic ---
-
-      function openEditModal(recordId) {
-        const record = allRecords.find(r => r.id === recordId);
-        if (!record) return;
-
+      function openEditModal(id) {
+        const r = allRecords.find(x => x.id === id);
+        if(!r) return;
         document.getElementById('editModal').style.display = 'flex';
-        document.getElementById('edit-id').value = record.id;
-        document.getElementById('edit-original-parent').value = record.parentId;
-        document.getElementById('edit-title').value = record.title;
-        document.getElementById('edit-level').value = record.level;
-        document.getElementById('edit-diff').value = record.difficultyRaw;
-        document.getElementById('edit-miss').value = record.missCount;
+        document.getElementById('edit-id').value = r.id;
+        document.getElementById('edit-original-parent').value = r.parentId;
+        document.getElementById('edit-title').value = r.title;
+        document.getElementById('edit-level').value = r.level;
+        document.getElementById('edit-diff').value = r.difficultyRaw;
+        document.getElementById('edit-total-miss').value = r.missCount;
         
-        // プレビュー用画像（高画質URLを使用）
-        const previewUrl = record.thumbnail ? record.thumbnail.replace('=s220', '=w1600') : '';
-        const imgEl = document.getElementById('edit-preview-img');
-        imgEl.src = previewUrl;
-        imgEl.crossOrigin = "anonymous"; // canvas汚染対策
+        // Initial state: hide breakdown because we don't know it without OCR
+        document.getElementById('edit-breakdown-area').style.display = 'none';
+        
+        const img = document.getElementById('edit-preview-img');
+        img.src = r.thumbnail ? r.thumbnail.replace('=s220','=w1600') : '';
+        img.crossOrigin = "anonymous";
       }
-
-      function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-        document.getElementById('edit-preview-img').src = "";
-      }
+      function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
       async function runEditAnalysis() {
-          const imgEl = document.getElementById('edit-preview-img');
-          if (!imgEl.src) return;
-
-          const btn = document.querySelector('.btn-analyze');
-          const originalText = btn.innerHTML;
-          btn.innerHTML = `<span class="material-symbols-outlined">hourglass_top</span> 解析中...`;
-          btn.disabled = true;
-
+          const img = document.getElementById('edit-preview-img');
+          if(!img.src) return;
+          const btn = document.querySelector('#editModal .btn-analyze');
+          btn.disabled = true; btn.innerHTML = '解析中...';
+          
           try {
-              const worker = await Tesseract.createWorker(['jpn', 'eng']);
-              const result = await analyzeLoadedImage(imgEl, worker);
+              const worker = await Tesseract.createWorker(['jpn','eng']);
+              const res = await analyzeLoadedImage(img, worker);
               await worker.terminate();
-
-              if (result) {
-                  document.getElementById('edit-title').value = result.title;
-                  document.getElementById('edit-level').value = result.level;
-                  document.getElementById('edit-diff').value = result.diff;
-                  document.getElementById('edit-miss').value = result.miss;
+              
+              if(res) {
+                  document.getElementById('edit-title').value = res.title;
+                  document.getElementById('edit-level').value = res.level;
+                  document.getElementById('edit-diff').value = res.diff;
+                  
+                  // Show breakdown
+                  document.getElementById('edit-breakdown-area').style.display = 'block';
+                  document.getElementById('edit-good').value = res.details.good;
+                  document.getElementById('edit-bad').value = res.details.bad;
+                  document.getElementById('edit-miss-detail').value = res.details.miss;
+                  document.getElementById('edit-total-miss').value = res.miss;
               } else {
-                  alert("解析に失敗しました");
+                  alert("解析失敗");
               }
-          } catch (e) {
-              console.error(e);
-              alert("解析エラー: " + e.message);
+          } catch(e) {
+              console.error(e); alert("エラー: "+e.message);
           } finally {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
+              btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析';
           }
+      }
+
+      function recalcEditTotal() {
+          const g = parseInt(document.getElementById('edit-good').value) || 0;
+          const b = parseInt(document.getElementById('edit-bad').value) || 0;
+          const m = parseInt(document.getElementById('edit-miss-detail').value) || 0;
+          document.getElementById('edit-total-miss').value = g + b + m;
       }
 
       async function handleEditSave() {
         const id = document.getElementById('edit-id').value;
-        const oldParentId = document.getElementById('edit-original-parent').value;
-        const newTitle = document.getElementById('edit-title').value.trim();
-        const newLevel = document.getElementById('edit-level').value.trim();
-        const newDiff = document.getElementById('edit-diff').value;
-        const newMiss = document.getElementById('edit-miss').value;
+        const oldP = document.getElementById('edit-original-parent').value;
+        const tit = document.getElementById('edit-title').value.trim();
+        const lvl = document.getElementById('edit-level').value.trim();
+        const dif = document.getElementById('edit-diff').value;
+        const mis = document.getElementById('edit-total-miss').value;
 
-        if (!newTitle || !newLevel || !newMiss) {
-            alert("すべての項目を入力してください");
-            return;
-        }
-
+        if(!tit || !lvl || !mis) { alert("入力不備があります"); return; }
+        
         const btn = document.getElementById('btn-save-edit');
-        btn.disabled = true;
-        btn.innerText = "保存中...";
-
+        btn.disabled = true; btn.innerText = "保存中...";
+        
         try {
-            // 1. フォルダパスの特定・作成
-            const rootFolder = await findOrCreateFolder("プロセカリザルト");
-            const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
+            const root = await findOrCreateFolder("プロセカリザルト");
+            const fcF = await findOrCreateFolder("FC", root.id);
+            const targetF = await findOrCreateFolder(`${lvl}${dif} ${tit}`, fcF.id);
             
-            const newFolderName = `${newLevel}${newDiff} ${newTitle}`;
-            const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
-
-            // 2. ファイル名の決定
-            const newFileName = (parseInt(newMiss) === 0) ? "FC" : `FC-${newMiss}`;
-
-            // 3. Drive API で更新 (リネーム & 移動)
-            await moveAndRenameFile(id, newFileName, targetFolder.id, oldParentId);
-
-            alert("情報を更新し、Driveのフォルダ/ファイル名を変更しました。");
+            const newName = (parseInt(mis)===0) ? "FC" : `FC-${mis}`;
+            
+            const body = { name: newName };
+            const params = { fileId: id, resource: body };
+            if(targetF.id !== oldP) { params.addParents = targetF.id; params.removeParents = oldP; }
+            
+            await gapi.client.drive.files.update(params);
+            
             closeEditModal();
-            
-            // 4. データ再取得
             await fetchDataFromDrive();
-
-        } catch (e) {
-            console.error(e);
-            alert("更新に失敗しました: " + e.message);
+        } catch(e) {
+            console.error(e); alert("保存失敗: "+e.message);
         } finally {
-            btn.disabled = false;
-            btn.innerText = "保存して反映";
+            btn.disabled = false; btn.innerText = "保存して反映";
         }
       }
 
-      // --- Deletion Logic ---
-
-      async function confirmDelete(fileId, title) {
-        event.stopPropagation();
-        if (confirm(`「${title}」のリザルト画像を削除しますか？\n（Google Driveのゴミ箱に移動します）`)) {
-          const loader = document.getElementById('loader');
-          loader.style.display = 'flex';
-          document.getElementById('loader-text').innerText = '削除中...';
-          document.getElementById('grid').innerHTML = ''; 
-
-          try {
-            await deleteFile(fileId);
-            alert("削除しました。");
-            await fetchDataFromDrive();
-          } catch (e) {
-            console.error(e);
-            alert("削除に失敗しました: " + e.message);
-            loader.style.display = 'none';
+      async function deleteFile(id) { await gapi.client.drive.files.delete({ fileId: id }); }
+      async function confirmDelete(id, title) {
+          if(confirm(`「${title}」を削除しますか？`)) {
+              document.getElementById('loader').style.display='flex';
+              try { await deleteFile(id); await fetchDataFromDrive(); } 
+              catch(e) { alert("削除失敗"); console.error(e); }
           }
-        }
       }
 
-      // --- Parsing Helpers ---
-
-      function parseFolderTitle(folderName) {
-        const regex = /^(\d+)([AMEH])\s+(.+)$/;
-        const match = folderName.match(regex);
-        if (!match) return null;
-        const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' };
-        return {
-          level: parseInt(match[1], 10),
-          rawDiff: match[2],
-          difficulty: diffMap[match[2]] || match[2],
-          title: match[3]
-        };
+      // --- View Helpers ---
+      function parseFolderTitle(n) {
+          const m = n.match(/^(\d+)([AMEH])\s+(.+)$/);
+          if(!m) return null;
+          const map = {'A':'Append','M':'Master','E':'Expert','H':'Hard'};
+          return { level: parseInt(m[1],10), rawDiff: m[2], difficulty: map[m[2]], title: m[3] };
       }
-
-      function parseScore(fileName) {
-        const regex = /^FC(?:-(\d+))?/;
-        const match = fileName.match(regex);
-        if (match) {
-          return match[1] === undefined ? 0 : parseInt(match[1], 10);
-        }
-        return null;
+      function parseScore(n) {
+          const m = n.match(/^FC(?:-(\d+))?/);
+          return m ? (m[1]===undefined?0:parseInt(m[1],10)) : null;
       }
-
-      // --- UI Logic ---
-
-      function getDiffScore(rawDiff) { return diffRank[rawDiff] || 0; }
-
-      function onDataLoaded() {
-        document.getElementById('loader').style.display = 'none';
-        updateView();
-      }
-
       function updateView() {
-        if (!allRecords) return;
-        const fcFilter = document.getElementById('filter-fc').value;
-        const missFilter = document.getElementById('filter-miss').value;
-        const diffFilter = document.getElementById('filter-diff').value;
-        const levelFilter = document.getElementById('filter-level').value;
-        const bestOnly = document.getElementById('filter-best').checked;
-        const titleFilter = document.getElementById('filter-title').value.trim().toLowerCase();
-
-        let sourceRecords = allRecords;
-
-        if (bestOnly) {
-          const bestMap = new Map();
-          sourceRecords.forEach(rec => {
-            const key = rec.title + '_' + rec.difficultyRaw;
-            if (!bestMap.has(key)) {
-              bestMap.set(key, rec);
-            } else {
-              const currentBest = bestMap.get(key);
-              if (rec.missCount < currentBest.missCount) {
-                bestMap.set(key, rec);
+          if(!allRecords.length) return;
+          const fc=document.getElementById('filter-fc').value, ms=document.getElementById('filter-miss').value,
+                df=document.getElementById('filter-diff').value, lv=document.getElementById('filter-level').value,
+                best=document.getElementById('filter-best').checked,
+                tt=document.getElementById('filter-title').value.toLowerCase().trim();
+          
+          let list = allRecords;
+          if(best) {
+              const bMap = new Map();
+              list.forEach(r => {
+                  const k = r.title + r.difficultyRaw;
+                  if(!bMap.has(k) || r.missCount < bMap.get(k).missCount) bMap.set(k, r);
+              });
+              list = Array.from(bMap.values());
+          }
+          
+          list = list.filter(r => {
+              if(fc==='fc' && !r.isFC) return false;
+              if(fc==='unfc' && r.isFC) return false;
+              if(ms!=='all') {
+                  if(r.isFC) return false;
+                  if(ms==='range-1-5' && (r.missCount<1||r.missCount>5)) return false;
+                  if(ms==='range-6-10' && (r.missCount<6||r.missCount>10)) return false;
+                  if(ms==='range-11' && r.missCount<11) return false;
               }
-            }
+              if(df!=='all' && r.difficultyRaw!==df) return false;
+              if(lv && r.level!=lv) return false;
+              if(tt && !r.title.toLowerCase().includes(tt)) return false;
+              return true;
           });
-          sourceRecords = Array.from(bestMap.values());
-        }
 
-        let filtered = sourceRecords.filter(record => {
-          if (fcFilter === 'fc' && !record.isFC) return false;
-          if (fcFilter === 'unfc' && record.isFC) return false;
-
-          if (missFilter !== 'all') {
-             if (record.isFC) return false;
-             if (missFilter === 'range-1-5' && (record.missCount < 1 || record.missCount > 5)) return false;
-             if (missFilter === 'range-6-10' && (record.missCount < 6 || record.missCount > 10)) return false;
-             if (missFilter === 'range-11' && record.missCount < 11) return false;
-          }
-
-          if (diffFilter !== 'all' && record.difficultyRaw !== diffFilter) return false;
-          if (levelFilter && record.level != levelFilter) return false;
-          if (titleFilter && !record.title.toLowerCase().includes(titleFilter)) return false;
+          const so = document.getElementById('sort-order').value;
+          list.sort((a,b) => {
+              if(so==='title_asc') return a.title.localeCompare(b.title,'ja') || a.missCount-b.missCount;
+              if(so==='title_desc') return b.title.localeCompare(a.title,'ja') || a.missCount-b.missCount;
+              if(so==='level_desc') return b.level-a.level || a.missCount-b.missCount;
+              if(so==='level_asc') return a.level-b.level || a.missCount-b.missCount;
+              if(so==='miss_asc') return a.missCount-b.missCount || b.level-a.level;
+              if(so==='miss_desc') return b.missCount-a.missCount || b.level-a.level;
+              return 0;
+          });
           
-          return true;
-        });
-
-        const sortOrder = document.getElementById('sort-order').value;
-        
-        filtered.sort((a, b) => {
-          const titleAsc = a.title.localeCompare(b.title, 'ja');
-          const titleDesc = b.title.localeCompare(a.title, 'ja');
-          const levelDesc = b.level - a.level;
-          const levelAsc = a.level - b.level;
-          const diffDesc = getDiffScore(b.difficultyRaw) - getDiffScore(a.difficultyRaw); 
-          const missAsc = a.missCount - b.missCount;
-          const missDesc = b.missCount - a.missCount;
-
-          switch (sortOrder) {
-            case 'title_asc': return titleAsc || diffDesc || missAsc;
-            case 'title_desc': return titleDesc || diffDesc || missAsc;
-            case 'level_desc': return levelDesc || titleAsc || diffDesc || missAsc;
-            case 'level_asc': return levelAsc || titleAsc || diffDesc || missAsc;
-            case 'miss_asc': return missAsc || levelDesc || diffDesc || titleAsc;
-            case 'miss_desc': return missDesc || levelDesc || diffDesc || titleAsc;
-            default: return 0;
-          }
-        });
-
-        renderGrid(filtered);
-      }
-
-      function renderGrid(records) {
-        const grid = document.getElementById('grid');
-        const countLabel = document.getElementById('result-count');
-        
-        countLabel.textContent = `表示: ${records.length} 件`;
-        grid.innerHTML = '';
-
-        if (records.length === 0) {
-          grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#666;">該当するデータがありません</div>';
-          return;
-        }
-
-        records.forEach(rec => {
-          let thumbUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w600') : ''; 
-          let largeUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
-
-          const fcClass = rec.isFC ? 'is-fc' : '';
-          const missDisplay = rec.isFC ? 
-            `<span class="miss-val zero">FC-0</span>` : 
-            `FC -<span class="miss-val">${rec.missCount}</span>`;
+          const grid = document.getElementById('grid');
+          document.getElementById('result-count').innerText = `表示: ${list.length} 件`;
+          grid.innerHTML = '';
+          if(list.length===0) { grid.innerHTML='<div style="grid-column:1/-1;text-align:center;">該当なし</div>'; return; }
           
-          const badge = rec.isFC ? 
-            `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
-
-          const html = `
-            <div class="card ${fcClass}">
-              <div class="card-img-container" onclick="openImageModal('${largeUrl}')">
-                <div class="card-actions">
-                    <button class="action-btn btn-del" onclick="confirmDelete('${rec.id}', '${escapeHtml(rec.title)}')" title="削除">
-                        <span class="material-symbols-outlined">delete</span>
-                    </button>
-                    <button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${rec.id}')" title="編集">
-                        <span class="material-symbols-outlined">edit</span>
-                    </button>
-                </div>
-                ${badge}
-                <div class="img-loader-spinner"></div>
-                ${thumbUrl ? 
-                  `<img src="${thumbUrl}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` 
-                  : '<span style="color:#aaa;">NO IMAGE</span>'}
-              </div>
-              <div class="card-body">
-                <div class="song-meta">
-                  <span class="tag lvl">Lv.${rec.level}</span>
-                  <span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span>
-                </div>
-                <div class="song-title">${escapeHtml(rec.title)}</div>
-                <div class="score-info">
-                  <span style="display:flex; align-items:center; gap:2px;">
-                    <span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result
-                  </span>
-                  ${missDisplay}
-                </div>
-              </div>
-            </div>
-          `;
-          grid.innerHTML += html;
-        });
+          list.forEach(r => {
+              const th = r.thumbnail ? r.thumbnail.replace('=s220','=w600') : '';
+              const lg = r.thumbnail ? r.thumbnail.replace('=s220','=w1600') : '';
+              const miss = r.isFC ? '<span class="miss-val zero">FC-0</span>' : `FC -<span class="miss-val">${r.missCount}</span>`;
+              const bdg = r.isFC ? `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
+              
+              grid.innerHTML += `
+               <div class="card ${r.isFC?'is-fc':''}">
+                 <div class="card-img-container" onclick="openImageModal('${lg}')">
+                   <div class="card-actions">
+                       <button class="action-btn btn-del" onclick="confirmDelete('${r.id}','${r.title.replace(/'/g,"\\'")}')"><span class="material-symbols-outlined">delete</span></button>
+                       <button class="action-btn btn-edit" onclick="event.stopPropagation();openEditModal('${r.id}')"><span class="material-symbols-outlined">edit</span></button>
+                   </div>
+                   ${bdg}
+                   <div class="img-loader-spinner"></div>
+                   ${th?`<img src="${th}" class="card-img" loading="lazy" onload="this.style.opacity=1;this.previousElementSibling.style.display='none';">`:'<span style="color:#aaa">NO IMG</span>'}
+                 </div>
+                 <div class="card-body">
+                   <div class="song-meta"><span class="tag lvl">Lv.${r.level}</span><span class="tag diff-${r.difficultyRaw}">${r.difficulty}</span></div>
+                   <div class="song-title">${r.title}</div>
+                   <div class="score-info"><span style="display:flex;align-items:center;"><span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result</span>${miss}</div>
+                 </div>
+               </div>
+              `;
+          });
       }
-
-      function openImageModal(src) {
-        if(!src) return;
-        const modal = document.getElementById('imageModal');
-        const modalImg = document.getElementById('modalImg');
-        modal.style.display = "flex";
-        modalImg.src = src;
-      }
-
-      function closeImageModal() {
-        document.getElementById('imageModal').style.display = "none";
-      }
-
-      function escapeHtml(text) {
-        if (!text) return '';
-        return text.toString().replace(/[&<>"']/g, function(m) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-        });
-      }
+      function openImageModal(s){ if(!s)return; document.getElementById('imageModal').style.display="flex"; document.getElementById('modalImg').src=s; }
+      function closeImageModal(){ document.getElementById('imageModal').style.display="none"; }
     </script>
   </body>
 </html>
