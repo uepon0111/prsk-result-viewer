@@ -74,6 +74,15 @@
       
       .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
       
+      /* Overlay Actions (Edit/Delete) */
+      .card-overlay-actions { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 6px; z-index: 10; opacity: 0; transition: opacity 0.2s; }
+      .card:hover .card-overlay-actions { opacity: 1; }
+      .card.select-mode-active .card-overlay-actions { display: none !important; } /* Hide in select mode */
+
+      .btn-overlay { width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); color: #555; transition: all 0.2s; }
+      .btn-overlay:hover { transform: scale(1.1); color: #007bff; }
+      .btn-overlay.del:hover { color: #dc3545; background: #fff5f5; }
+
       .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
       .tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; letter-spacing: 0.5px; }
@@ -87,12 +96,6 @@
       .miss-val { font-weight: bold; }
       .miss-val.zero { color: var(--fc-color); } 
 
-      /* Individual Card Actions (when not in select mode) */
-      .card-actions { display: flex; gap: 5px; margin-left: auto; }
-      .btn-card-icon { border: none; background: none; color: #999; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s;}
-      .btn-card-icon:hover { background-color: #eee; color: #333; }
-      .btn-card-icon.del:hover { background-color: #fee; color: #dc3545; }
-      
       #loader { display: none; flex-direction: column; align-items: center; margin-top: 50px; color: #666; }
       .spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top: 4px solid var(--diff-master); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -790,7 +793,7 @@
 
       async function analyzeAllInBatch() {
           if (editorQueue.length === 0) return;
-          if(!confirm("リスト内のすべての画像を解析しますか？")) return;
+          // REMOVED CONFIRMATION
           await runBatchAnalysis(editorQueue);
       }
 
@@ -1153,31 +1156,32 @@
 
           // Conditional Actions
           let clickAction = "";
-          let cardActions = "";
+          let overlayActions = "";
           
           if (isSelectMode) {
               clickAction = `toggleSelection('${rec.id}')`;
           } else {
               clickAction = `openImageModal('${large}')`;
-              cardActions = `
-                <div class="card-actions">
-                    <button class="btn-card-icon" onclick="event.stopPropagation(); individualEdit('${rec.id}')" title="編集"><span class="material-symbols-outlined">edit</span></button>
-                    <button class="btn-card-icon del" onclick="event.stopPropagation(); individualDelete('${rec.id}')" title="削除"><span class="material-symbols-outlined">delete</span></button>
+              overlayActions = `
+                <div class="card-overlay-actions">
+                    <div class="btn-overlay" onclick="event.stopPropagation(); individualEdit('${rec.id}')" title="編集"><span class="material-symbols-outlined">edit</span></div>
+                    <div class="btn-overlay del" onclick="event.stopPropagation(); individualDelete('${rec.id}')" title="削除"><span class="material-symbols-outlined">delete</span></div>
                 </div>
               `;
           }
 
           grid.innerHTML += `
-            <div class="card ${rec.isFC?'is-fc':''} ${isSel}" id="card-${rec.id}" onclick="${clickAction}">
+            <div class="card ${rec.isFC?'is-fc':''} ${isSel} ${isSelectMode ? 'select-mode-active' : ''}" id="card-${rec.id}" onclick="${clickAction}">
               <div class="card-img-container">
                 ${badge}
+                ${overlayActions}
                 <div class="img-loader-spinner"></div>
                 ${thumb ? `<img src="${thumb}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` : '<span style="color:#aaa;">NO IMAGE</span>'}
               </div>
               <div class="card-body">
                 <div class="song-meta"><span class="tag lvl">Lv.${rec.level}</span><span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span></div>
                 <div class="song-title">${escapeHtml(rec.title)}</div>
-                <div class="score-info"><span style="display:flex;align-items:center;gap:2px;"><span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result</span>${cardActions || missDisplay}</div>
+                <div class="score-info"><span style="display:flex;align-items:center;gap:2px;"><span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result</span>${missDisplay}</div>
               </div>
             </div>`;
         });
