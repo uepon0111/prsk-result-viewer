@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>プロセカ リザルト管理</title>
+    <title>プロセカ リザルト管理 (Batch Edit)</title>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
@@ -38,6 +38,9 @@
       .btn-signout:hover { background-color: #c82333; }
       .btn-upload { background-color: #28a745; }
       .btn-upload:hover { background-color: #218838; }
+      .btn-batch-edit { background-color: #fd7e14; display: none; } /* 初期非表示 */
+      .btn-batch-edit:hover { background-color: #e36d0d; }
+
       #auth-status { margin-right: 10px; align-self: center; font-size: 0.9rem; color: #666; }
 
       /* Controls */
@@ -50,6 +53,9 @@
       input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--diff-master); }
       .checkbox-label { font-size: 0.9rem; cursor: pointer; user-select: none; }
 
+      .range-inputs { display: flex; align-items: center; gap: 5px; }
+      .range-inputs input { width: 100%; text-align: center; }
+
       .status-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; font-size: 0.9rem; color: #666; font-weight: bold; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
       
@@ -57,17 +63,20 @@
       .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; }
       .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
       .card.is-fc { border-color: var(--fc-color); }
+      .card.selected { border-color: #fd7e14; background-color: #fff9f2; transform: scale(0.98); } /* 選択時 */
+
+      .card-select-overlay { position: absolute; top: 10px; left: 10px; z-index: 20; transform: scale(1.2); }
+      
       .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; cursor: zoom-in; display: flex; justify-content: center; align-items: center; }
       .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
       .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
       
       .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
       
-      .card-actions { position: absolute; top: 8px; left: 8px; display: flex; gap: 5px; z-index: 10; }
+      .card-actions { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 5px; z-index: 10; }
       .action-btn { background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
       .action-btn:hover { background: rgba(0,0,0,0.8); }
       .btn-del:hover { background: #dc3545; }
-      .btn-edit:hover { background: #007bff; }
       
       .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
@@ -132,7 +141,7 @@
       .btn-cancel { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
-      .btn-analyze { position: absolute; bottom: 10px; right: 10px; background-color: rgba(0,123,255,0.9); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s;}
+      .btn-analyze { position: absolute; bottom: 10px; right: 10px; background-color: rgba(0,123,255,0.9); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; z-index: 5;}
       .btn-analyze:hover { transform: scale(1.05); }
 
       /* Upload Specific: Drop Zone */
@@ -159,7 +168,7 @@
     <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
       <div class="modal-form-content">
         <div class="modal-header">
-          <span><span class="material-symbols-outlined">cloud_upload</span> 画像アップロード・編集</span>
+          <span id="modal-title-text"><span class="material-symbols-outlined">cloud_upload</span> 画像アップロード・編集</span>
           <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
         </div>
         
@@ -178,7 +187,10 @@
             <div class="main-area">
                 <div id="upload-editor-container" class="editor-layout" style="display: none;">
                     <div class="preview-pane">
-                        <img id="upload-preview-img" src="">
+                        <img id="upload-preview-img" src="" crossorigin="anonymous">
+                        <button class="btn-analyze" onclick="runCurrentItemAnalysis()">
+                            <span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析
+                        </button>
                     </div>
                     <div class="form-pane">
                         <div class="form-group">
@@ -202,7 +214,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>判定内訳 (自動計算)</label>
+                            <label>判定内訳 (変更すると総数が更新されます)</label>
                             <div class="breakdown-group">
                                 <div class="breakdown-item">
                                     <label style="color:#28a745;">GOOD</label>
@@ -224,7 +236,7 @@
                     </div>
                 </div>
                 <div id="upload-empty-msg" style="margin:auto; color:#999; text-align:center;">
-                    左のリストから画像を選択してください
+                    左のリストから選択してください
                 </div>
             </div>
         </div>
@@ -235,80 +247,7 @@
 
         <div class="form-actions">
           <button class="btn-cancel" onclick="closeUploadModal()">閉じる</button>
-          <button class="btn-submit" id="btn-exec-upload" onclick="handleBatchUpload()" disabled>全てアップロード</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="editModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
-      <div class="modal-form-content" style="height: auto; max-height: 90vh;">
-        <div class="modal-header">
-          <span><span class="material-symbols-outlined">edit</span> 情報編集</span>
-          <span style="cursor:pointer;" onclick="closeEditModal()">&times;</span>
-        </div>
-        
-        <div class="main-area" style="padding-bottom: 0;">
-            <div class="editor-layout">
-                <div class="preview-pane">
-                    <img id="edit-preview-img" src="" alt="Preview">
-                    <button class="btn-analyze" onclick="runEditAnalysis()">
-                        <span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析
-                    </button>
-                </div>
-
-                <div class="form-pane">
-                    <input type="hidden" id="edit-id">
-                    <input type="hidden" id="edit-original-parent">
-                    
-                    <div class="form-group">
-                    <label>曲名</label>
-                    <input type="text" id="edit-title" style="width: 100%; box-sizing: border-box;">
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <div class="form-group" style="flex:1;">
-                            <label>レベル</label>
-                            <input type="number" id="edit-level" style="width: 100%; box-sizing: border-box;">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>難易度</label>
-                            <select id="edit-diff" style="width: 100%; box-sizing: border-box;">
-                                <option value="A">Append</option>
-                                <option value="M">Master</option>
-                                <option value="E">Expert</option>
-                                <option value="H">Hard</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>判定内訳 (変更すると総数が更新されます)</label>
-                        <div class="breakdown-group">
-                            <div class="breakdown-item">
-                                <label style="color:#28a745;">GOOD</label>
-                                <input type="number" id="edit-good" min="0" value="0" oninput="updateEditTotal()">
-                            </div>
-                            <div class="breakdown-item">
-                                <label style="color:#dc3545;">BAD</label>
-                                <input type="number" id="edit-bad" min="0" value="0" oninput="updateEditTotal()">
-                            </div>
-                            <div class="breakdown-item">
-                                <label style="color:#6c757d;">MISS</label>
-                                <input type="number" id="edit-miss-detail" min="0" value="0" oninput="updateEditTotal()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>総ミス数 (保存される値)</label>
-                        <input type="number" id="edit-miss" min="0" style="width: 100%; box-sizing: border-box; font-weight:bold; background-color:#fff;">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-cancel" onclick="closeEditModal()">キャンセル</button>
-          <button class="btn-submit" id="btn-save-edit" onclick="handleEditSave()">保存して反映</button>
+          <button class="btn-submit" id="btn-exec-upload" onclick="handleBatchExecution()" disabled>実行</button>
         </div>
       </div>
     </div>
@@ -317,7 +256,11 @@
       <div class="auth-section">
         <span id="auth-status">未ログイン</span>
         
-        <button id="upload_button" class="btn-auth btn-upload" onclick="openUploadModal()" style="display: none;">
+        <button id="batch_edit_button" class="btn-auth btn-batch-edit" onclick="startBatchEditMode()">
+             <span class="material-symbols-outlined">edit_square</span> 一括編集 (<span id="selected-count">0</span>)
+        </button>
+
+        <button id="upload_button" class="btn-auth btn-upload" onclick="openUploadModal('upload')" style="display: none;">
           <span class="material-symbols-outlined">add_photo_alternate</span> アップロード
         </button>
 
@@ -354,13 +297,12 @@
         </div>
         
         <div class="control-group">
-          <label><span class="material-symbols-outlined">remove_circle</span> 失点数</label>
-          <select id="filter-miss" onchange="updateView()">
-            <option value="all">指定なし</option>
-            <option value="range-1-5">1 ～ 5</option>
-            <option value="range-6-10">6 ～ 10</option>
-            <option value="range-11">11以上</option>
-          </select>
+          <label><span class="material-symbols-outlined">remove_circle</span> 失点数 (Min - Max)</label>
+          <div class="range-inputs">
+             <input type="number" id="filter-miss-min" placeholder="0" oninput="updateView()">
+             <span>~</span>
+             <input type="number" id="filter-miss-max" placeholder="∞" oninput="updateView()">
+          </div>
         </div>
 
         <div class="control-group">
@@ -409,10 +351,10 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
     <script>
-      // ↓↓↓ GCPで取得した値を設定してください ↓↓↓
+      // ↓↓↓ GCP設定 ↓↓↓
       const CLIENT_ID = '966636096862-8hrrm5heb4g5r469veoels7u6ifjguuk.apps.googleusercontent.com';
       const API_KEY = 'AIzaSyC-m1rkHuJTmNK2k-s89bJFshvXCS5MZZ0';
-      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
       const SCOPES = 'https://www.googleapis.com/auth/drive';
@@ -420,7 +362,8 @@
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
-      let allRecords = [];
+      let allRecords = []; // {id, title, level, ...}
+      let selectedIds = new Set();
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
       // DB
@@ -474,6 +417,8 @@
           document.getElementById('result-count').innerText = 'ログアウトしました';
           document.getElementById('grid').innerHTML = '';
           allRecords = [];
+          selectedIds.clear();
+          updateBatchButton();
         }
       }
 
@@ -492,6 +437,9 @@
         document.getElementById('result-count').innerText = 'データ取得中...';
         document.getElementById('loader-text').innerText = 'データを検索中...';
         
+        selectedIds.clear();
+        updateBatchButton();
+
         try {
           const ROOT_FOLDER_NAME = "プロセカリザルト";
           const SOURCE_PATH = ["FC"];
@@ -639,7 +587,7 @@
         const target = normalizeString(ocrText);
         if (target.length === 0) return null;
         let bestMatch = null, minScore = Infinity;
-        // Levenshtein logic omitted for brevity, simple logic
+        // Levenshtein (simple implementation)
         const levenshtein = (s1, s2) => {
             if(s1.length > s2.length) [s1,s2] = [s2,s1];
             let dist = Array.from({length: s1.length+1},(_,i)=>i);
@@ -722,77 +670,172 @@
         } catch (e) { console.error(e); return null; }
       }
 
-      // --- Upload Logic (New Split Layout) ---
+      // --- Universal Editor (Upload & Batch Edit) ---
 
-      let uploadQueue = []; // { id, file, result: {title, ...}, status }
-      let activeUploadId = null;
+      let queue = []; // { id, file(opt), isExisting(bool), originalData(opt), imgUrl, data: {...}, status }
+      let activeItemId = null;
+      let appMode = 'upload'; // 'upload' or 'edit'
 
-      function openUploadModal() {
-        document.getElementById('uploadModal').style.display = 'flex';
-        document.getElementById('up-file').value = "";
+      // Mode Switching
+      function openUploadModal(mode) {
+        appMode = mode;
+        const modal = document.getElementById('uploadModal');
+        modal.style.display = 'flex';
         
-        // Reset Views
-        document.getElementById('upload-initial').style.display = 'flex';
-        document.getElementById('upload-workspace').style.display = 'none';
+        // Reset Logic
+        queue = [];
+        activeItemId = null;
         document.getElementById('upload-sidebar-list').innerHTML = "";
         document.getElementById('upload-editor-container').style.display = 'none';
-        document.getElementById('upload-empty-msg').style.display = 'block';
-        
         document.getElementById('upload-status-msg').innerText = "待機中...";
         document.getElementById('btn-exec-upload').disabled = true;
-        uploadQueue = [];
-        activeUploadId = null;
+
+        if (mode === 'upload') {
+            document.getElementById('modal-title-text').innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> 画像アップロード';
+            document.getElementById('upload-initial').style.display = 'flex';
+            document.getElementById('upload-workspace').style.display = 'none';
+            document.getElementById('upload-empty-msg').style.display = 'block';
+            document.getElementById('up-file').value = ""; // clear file input
+            document.getElementById('btn-exec-upload').innerText = "全てアップロード";
+        } else {
+            document.getElementById('modal-title-text').innerHTML = '<span class="material-symbols-outlined">edit_square</span> 一括編集モード';
+            document.getElementById('upload-initial').style.display = 'none';
+            document.getElementById('upload-workspace').style.display = 'flex'; // show workspace immediately
+            document.getElementById('upload-empty-msg').style.display = 'block';
+            document.getElementById('btn-exec-upload').innerText = "一括保存・反映";
+        }
       }
 
       function closeUploadModal() {
         document.getElementById('uploadModal').style.display = 'none';
+        queue = [];
       }
 
-      // Drop Zone & File Handling
+      // 1. Upload Flow: File Selection
       const dropZone = document.getElementById('drop-zone');
       dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
       dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault(); dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
-      });
+      dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files); });
       document.getElementById('up-file').addEventListener('change', (e) => handleFiles(e.target.files));
 
       async function handleFiles(files) {
         if (files.length === 0) return;
-
-        // Switch to Workspace View
         document.getElementById('upload-initial').style.display = 'none';
         document.getElementById('upload-workspace').style.display = 'flex';
+
+        // Add to Queue
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const qId = "new_" + Date.now() + "_" + i;
+            queue.push({
+                id: qId,
+                file: file,
+                isExisting: false,
+                imgUrl: URL.createObjectURL(file),
+                status: 'pending',
+                data: { title:'', level:'', diff:'M', good:0, bad:0, missDetail:0, totalMiss:0, musicId:null }
+            });
+            renderSidebarItem(qId);
+        }
         
+        // Auto select first if needed
+        if (!activeItemId && queue.length > 0) selectQueueItem(queue[0].id);
+
+        // Run Analysis for pending items
+        await runQueueAnalysis();
+      }
+
+      // 2. Batch Edit Flow: Start
+      function startBatchEditMode() {
+          if (selectedIds.size === 0) return;
+          openUploadModal('edit');
+
+          // Convert selection to Queue
+          const ids = Array.from(selectedIds);
+          ids.forEach(id => {
+              const rec = allRecords.find(r => r.id === id);
+              if(rec) {
+                  const qId = rec.id; // Use existing ID
+                  const largeUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
+                  queue.push({
+                      id: qId,
+                      isExisting: true,
+                      originalData: rec,
+                      imgUrl: largeUrl,
+                      status: 'done', // initially assume loaded, but can be re-analyzed
+                      data: {
+                          title: rec.title,
+                          level: rec.level,
+                          diff: rec.difficultyRaw,
+                          good: 0, bad: 0, missDetail: 0, // Breakdown unknown in Drive metadata, init 0
+                          totalMiss: rec.missCount,
+                          musicId: null
+                      }
+                  });
+                  renderSidebarItem(qId);
+              }
+          });
+
+          if (queue.length > 0) selectQueueItem(queue[0].id);
+          checkUploadButton();
+      }
+
+      // --- Analysis Runner (Common) ---
+
+      async function runQueueAnalysis() {
         const statusMsg = document.getElementById('upload-status-msg');
         statusMsg.innerText = "画像を解析中... (そのままお待ちください)";
         
         const worker = await Tesseract.createWorker(['jpn', 'eng']);
         
-        // Add items to queue first (Optimistic UI)
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const qId = Date.now() + "_" + i;
-            
-            uploadQueue.push({
-                id: qId,
-                file: file,
-                imgUrl: URL.createObjectURL(file),
-                status: 'pending',
-                data: { title:'', level:'', diff:'M', good:0, bad:0, missDetail:0, totalMiss:0, musicId:null }
-            });
-            
-            renderSidebarItem(qId);
-        }
-
-        // Process Analysis
-        for (const item of uploadQueue) {
+        for (const item of queue) {
             if(item.status !== 'pending') continue;
-            
+            await processItemAnalysis(item, worker);
+            updateSidebarStatus(item.id);
+        }
+        await worker.terminate();
+        statusMsg.innerText = "処理完了。内容を確認してください。";
+        checkUploadButton();
+      }
+
+      // Re-analyze specific item button logic
+      async function runCurrentItemAnalysis() {
+          if (!activeItemId) return;
+          const item = queue.find(q => q.id === activeItemId);
+          if (!item) return;
+
+          const btn = document.querySelector('#uploadModal .btn-analyze');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<span class="material-symbols-outlined">hourglass_top</span> 解析中...`;
+          btn.disabled = true;
+
+          try {
+             const worker = await Tesseract.createWorker(['jpn', 'eng']);
+             await processItemAnalysis(item, worker);
+             await worker.terminate();
+             
+             // Reflect changes in UI
+             selectQueueItem(item.id); // Reload form
+             updateSidebarStatus(item.id);
+             document.getElementById('upload-status-msg').innerText = "再解析完了";
+          } catch(e) {
+              alert("解析エラー: " + e);
+          } finally {
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+          }
+      }
+
+      async function processItemAnalysis(item, worker) {
+          try {
+            // Create a temp image for analysis if not visible
             const img = new Image();
+            img.crossOrigin = "anonymous";
             img.src = item.imgUrl;
-            await new Promise(r => img.onload = r);
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
             
             const res = await analyzeLoadedImage(img, worker);
             if (res) {
@@ -810,32 +853,28 @@
             } else {
                 item.status = 'error';
             }
-            updateSidebarStatus(item.id);
-        }
-        
-        await worker.terminate();
-        statusMsg.innerText = "解析完了。内容を確認してください。";
-        checkUploadButton();
-
-        // Select first item if none selected
-        if (!activeUploadId && uploadQueue.length > 0) {
-            selectUploadItem(uploadQueue[0].id);
-        }
+          } catch (e) {
+              console.error(e);
+              item.status = 'error';
+          }
       }
 
+
+      // --- Queue & UI Management ---
+
       function renderSidebarItem(id) {
-        const item = uploadQueue.find(q => q.id === id);
+        const item = queue.find(q => q.id === id);
         const div = document.createElement('div');
         div.className = 'sidebar-item';
         div.id = `sb-${id}`;
-        div.onclick = () => selectUploadItem(id);
+        div.onclick = () => selectQueueItem(id);
         div.innerHTML = `
-            <img src="${item.imgUrl}" class="sidebar-thumb">
+            <img src="${item.imgUrl}" class="sidebar-thumb" crossorigin="anonymous">
             <div class="sidebar-info">
-                <div class="sidebar-title" id="sb-title-${id}">解析待ち...</div>
+                <div class="sidebar-title" id="sb-title-${id}">${item.data.title || '解析待ち...'}</div>
                 <div class="sidebar-status">
-                    <span id="sb-status-${id}" class="upload-status pending">Pending</span>
-                    <button class="btn-remove-side" onclick="removeUploadItem(event, '${id}')">
+                    <span id="sb-status-${id}" class="upload-status ${item.status}">${item.status==='pending'?'Wait':(item.status==='done'?'OK':'ERR')}</span>
+                    <button class="btn-remove-side" onclick="removeQueueItem(event, '${id}')">
                         <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
                     </button>
                 </div>
@@ -845,45 +884,33 @@
       }
 
       function updateSidebarStatus(id) {
-        const item = uploadQueue.find(q => q.id === id);
+        const item = queue.find(q => q.id === id);
         if(!item) return;
-        
         const titleEl = document.getElementById(`sb-title-${id}`);
         const statusEl = document.getElementById(`sb-status-${id}`);
         
-        if (item.data.title) titleEl.innerText = item.data.title;
-        else titleEl.innerText = "タイトル不明";
-
-        if (item.status === 'done') {
-            statusEl.innerText = "OK";
-            statusEl.className = "upload-status done";
-        } else if (item.status === 'error') {
-            statusEl.innerText = "ERR";
-            statusEl.className = "upload-status error";
-        }
+        titleEl.innerText = item.data.title || "タイトル不明";
+        if (item.status === 'done') { statusEl.innerText = "OK"; statusEl.className = "upload-status done"; }
+        else if (item.status === 'error') { statusEl.innerText = "ERR"; statusEl.className = "upload-status error"; }
       }
 
-      function selectUploadItem(id) {
-        activeUploadId = id;
-        const item = uploadQueue.find(q => q.id === id);
+      function selectQueueItem(id) {
+        activeItemId = id;
+        const item = queue.find(q => q.id === id);
         if(!item) return;
 
-        // Highlight Sidebar
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         const sbEl = document.getElementById(`sb-${id}`);
         if(sbEl) sbEl.classList.add('active');
 
-        // Show Editor
         document.getElementById('upload-editor-container').style.display = 'flex';
         document.getElementById('upload-empty-msg').style.display = 'none';
 
-        // Populate Form
         document.getElementById('upload-preview-img').src = item.imgUrl;
         document.getElementById('up-title').value = item.data.title;
         document.getElementById('up-level').value = item.data.level;
         document.getElementById('up-diff').value = item.data.diff;
         
-        // Breakdown
         document.getElementById('up-good').value = item.data.good;
         document.getElementById('up-bad').value = item.data.bad;
         document.getElementById('up-miss-detail').value = item.data.missDetail;
@@ -891,8 +918,8 @@
       }
 
       function updateCurrentUploadItem(field, value) {
-        if(!activeUploadId) return;
-        const item = uploadQueue.find(q => q.id === activeUploadId);
+        if(!activeItemId) return;
+        const item = queue.find(q => q.id === activeItemId);
         if(!item) return;
 
         if(field === 'good' || field === 'bad' || field === 'missDetail' || field === 'level') {
@@ -900,61 +927,69 @@
         } else {
              item.data[field] = value;
         }
-
-        // Logic for Diff Change -> Auto Level
+        
+        // Auto Level Logic
         if (field === 'diff' && item.data.musicId) {
              const map = {'A':'append', 'M':'master', 'E':'expert', 'H':'hard'};
              const newLvl = getLevelFromDb(item.data.musicId, map[value]);
-             if(newLvl) {
-                 item.data.level = newLvl;
-                 document.getElementById('up-level').value = newLvl;
-             }
+             if(newLvl) { item.data.level = newLvl; document.getElementById('up-level').value = newLvl; }
         }
 
-        // Recalculate Total
+        // Total Logic
         if(field === 'good' || field === 'bad' || field === 'missDetail') {
             item.data.totalMiss = item.data.good + item.data.bad + item.data.missDetail;
             document.getElementById('up-total-miss').innerText = item.data.totalMiss;
         }
 
-        // Update Sidebar Title if changed
         if(field === 'title') {
-            document.getElementById(`sb-title-${activeUploadId}`).innerText = value || "名称未設定";
+            document.getElementById(`sb-title-${activeItemId}`).innerText = value || "名称未設定";
         }
       }
 
-      function removeUploadItem(e, id) {
+      function removeQueueItem(e, id) {
         e.stopPropagation();
-        uploadQueue = uploadQueue.filter(q => q.id !== id);
+        queue = queue.filter(q => q.id !== id);
         const el = document.getElementById(`sb-${id}`);
         if(el) el.remove();
         
-        if (activeUploadId === id) {
+        if (activeItemId === id) {
             document.getElementById('upload-editor-container').style.display = 'none';
             document.getElementById('upload-empty-msg').style.display = 'block';
-            activeUploadId = null;
+            activeItemId = null;
         }
         checkUploadButton();
       }
 
       function checkUploadButton() {
         const btn = document.getElementById('btn-exec-upload');
-        btn.disabled = uploadQueue.length === 0;
-        btn.innerText = uploadQueue.length > 0 ? `全てアップロード (${uploadQueue.length}件)` : "全てアップロード";
+        btn.disabled = queue.length === 0;
+        if(appMode === 'upload') btn.innerText = queue.length > 0 ? `全てアップロード (${queue.length}件)` : "全てアップロード";
+        else btn.innerText = queue.length > 0 ? `一括保存して反映 (${queue.length}件)` : "一括保存して反映";
       }
 
-      async function handleBatchUpload() {
-        if (uploadQueue.length === 0) return;
-        const btn = document.getElementById('btn-exec-upload');
-        btn.disabled = true;
+      // --- EXECUTION (Save / Upload) ---
+
+      async function handleBatchExecution() {
+          if (queue.length === 0) return;
+          const btn = document.getElementById('btn-exec-upload');
+          btn.disabled = true;
+          
+          if (appMode === 'upload') {
+              await executeUpload(btn);
+          } else {
+              await executeBatchUpdate(btn);
+          }
+      }
+
+      // Upload Implementation
+      async function executeUpload(btn) {
         btn.innerText = "アップロード中...";
-        
         let successCount = 0;
         const accessToken = gapi.client.getToken().access_token;
         const rootFolder = await findOrCreateFolder("プロセカリザルト");
         const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
 
-        for (const item of [...uploadQueue]) {
+        for (const item of [...queue]) {
             const sbStatus = document.getElementById(`sb-status-${item.id}`);
             if(sbStatus) { sbStatus.innerText = "送信中"; sbStatus.className = "upload-status processing"; }
             
@@ -975,8 +1010,44 @@
                 });
                 if (!res.ok) throw new Error(res.statusText);
 
-                // Remove from queue
-                removeUploadItem({stopPropagation:()=>{}}, item.id);
+                removeQueueItem({stopPropagation:()=>{}}, item.id);
+                successCount++;
+            } catch (e) {
+                console.error(e);
+                if(sbStatus) { sbStatus.innerText = "失敗"; sbStatus.className = "upload-status error"; }
+            }
+        }
+        finishExecution(successCount, "アップロード");
+      }
+
+      // Batch Update Implementation
+      async function executeBatchUpdate(btn) {
+        btn.innerText = "更新中...";
+        let successCount = 0;
+        const rootFolder = await findOrCreateFolder("プロセカリザルト");
+        const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
+
+        for (const item of [...queue]) {
+            const sbStatus = document.getElementById(`sb-status-${item.id}`);
+            if(sbStatus) { sbStatus.innerText = "更新中"; sbStatus.className = "upload-status processing"; }
+
+            try {
+                const newTitle = item.data.title.trim();
+                const newLevel = item.data.level;
+                const newDiff = item.data.diff;
+                const newMiss = item.data.totalMiss;
+
+                if (!newTitle || !newLevel) throw new Error("必須項目不足");
+
+                // Target Folder Logic
+                const newFolderName = `${newLevel}${newDiff} ${newTitle}`;
+                const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
+                const newFileName = (newMiss === 0) ? "FC" : `FC-${newMiss}`;
+                
+                // Move/Rename
+                await moveAndRenameFile(item.id, newFileName, targetFolder.id, item.originalData.parentId);
+                
+                removeQueueItem({stopPropagation:()=>{}}, item.id);
                 successCount++;
 
             } catch (e) {
@@ -984,122 +1055,17 @@
                 if(sbStatus) { sbStatus.innerText = "失敗"; sbStatus.className = "upload-status error"; }
             }
         }
+        finishExecution(successCount, "更新");
+      }
 
-        if (uploadQueue.length === 0) {
-            alert(`完了 (${successCount}件)`);
+      async function finishExecution(count, type) {
+          if (queue.length === 0) {
+            alert(`${type}完了 (${count}件)`);
             closeUploadModal();
             await fetchDataFromDrive();
         } else {
-            alert(`${successCount}件 成功。エラー分を確認してください。`);
-        }
-        checkUploadButton();
-      }
-
-      // --- Edit Logic (Updated with Breakdown) ---
-
-      function openEditModal(recordId) {
-        const record = allRecords.find(r => r.id === recordId);
-        if (!record) return;
-
-        document.getElementById('editModal').style.display = 'flex';
-        document.getElementById('edit-id').value = record.id;
-        document.getElementById('edit-original-parent').value = record.parentId;
-        document.getElementById('edit-title').value = record.title;
-        document.getElementById('edit-level').value = record.level;
-        document.getElementById('edit-diff').value = record.difficultyRaw;
-        
-        // Existing Data doesn't have breakdown stored, so init with 0 and Total
-        document.getElementById('edit-good').value = 0;
-        document.getElementById('edit-bad').value = 0;
-        document.getElementById('edit-miss-detail').value = 0;
-        document.getElementById('edit-miss').value = record.missCount;
-
-        const previewUrl = record.thumbnail ? record.thumbnail.replace('=s220', '=w1600') : '';
-        const imgEl = document.getElementById('edit-preview-img');
-        imgEl.src = previewUrl;
-        imgEl.crossOrigin = "anonymous";
-      }
-
-      function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-        document.getElementById('edit-preview-img').src = "";
-      }
-
-      function updateEditTotal() {
-          const g = parseInt(document.getElementById('edit-good').value) || 0;
-          const b = parseInt(document.getElementById('edit-bad').value) || 0;
-          const m = parseInt(document.getElementById('edit-miss-detail').value) || 0;
-          document.getElementById('edit-miss').value = g + b + m;
-      }
-
-      async function runEditAnalysis() {
-          const imgEl = document.getElementById('edit-preview-img');
-          if (!imgEl.src) return;
-
-          const btn = document.querySelector('#editModal .btn-analyze');
-          const originalText = btn.innerHTML;
-          btn.innerHTML = `<span class="material-symbols-outlined">hourglass_top</span>`;
-          btn.disabled = true;
-
-          try {
-              const worker = await Tesseract.createWorker(['jpn', 'eng']);
-              const result = await analyzeLoadedImage(imgEl, worker);
-              await worker.terminate();
-
-              if (result) {
-                  document.getElementById('edit-title').value = result.title;
-                  document.getElementById('edit-level').value = result.level;
-                  document.getElementById('edit-diff').value = result.diff;
-                  
-                  // Breakdown Populate
-                  document.getElementById('edit-good').value = result.missDetail.good;
-                  document.getElementById('edit-bad').value = result.missDetail.bad;
-                  document.getElementById('edit-miss-detail').value = result.missDetail.miss;
-                  document.getElementById('edit-miss').value = result.miss; // Total
-              } else {
-                  alert("解析失敗");
-              }
-          } catch (e) {
-              console.error(e);
-              alert("解析エラー: " + e.message);
-          } finally {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
-          }
-      }
-
-      async function handleEditSave() {
-        const id = document.getElementById('edit-id').value;
-        const oldParentId = document.getElementById('edit-original-parent').value;
-        const newTitle = document.getElementById('edit-title').value.trim();
-        const newLevel = document.getElementById('edit-level').value.trim();
-        const newDiff = document.getElementById('edit-diff').value;
-        const newMiss = document.getElementById('edit-miss').value;
-
-        if (!newTitle || !newLevel || newMiss === "") { alert("必須項目不足"); return; }
-
-        const btn = document.getElementById('btn-save-edit');
-        btn.disabled = true;
-        btn.innerText = "保存中...";
-
-        try {
-            const rootFolder = await findOrCreateFolder("プロセカリザルト");
-            const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
-            const newFolderName = `${newLevel}${newDiff} ${newTitle}`;
-            const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
-            const newFileName = (parseInt(newMiss) === 0) ? "FC" : `FC-${newMiss}`;
-
-            await moveAndRenameFile(id, newFileName, targetFolder.id, oldParentId);
-
-            alert("更新しました");
-            closeEditModal();
-            await fetchDataFromDrive();
-        } catch (e) {
-            console.error(e);
-            alert("更新失敗: " + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "保存して反映";
+            alert(`${count}件 成功。エラー分を確認してください。`);
+            checkUploadButton();
         }
       }
 
@@ -1141,11 +1107,14 @@
       function updateView() {
         if (!allRecords) return;
         const fcF = document.getElementById('filter-fc').value;
-        const msF = document.getElementById('filter-miss').value;
         const dfF = document.getElementById('filter-diff').value;
         const lvF = document.getElementById('filter-level').value;
         const bestOnly = document.getElementById('filter-best').checked;
         const tiF = document.getElementById('filter-title').value.trim().toLowerCase();
+        
+        // New Min-Max Logic
+        const msMin = document.getElementById('filter-miss-min').value;
+        const msMax = document.getElementById('filter-miss-max').value;
 
         let list = allRecords;
         if (bestOnly) {
@@ -1160,12 +1129,11 @@
         list = list.filter(r => {
           if (fcF === 'fc' && !r.isFC) return false;
           if (fcF === 'unfc' && r.isFC) return false;
-          if (msF !== 'all') {
-             if (r.isFC) return false;
-             if (msF === 'range-1-5' && (r.missCount < 1 || r.missCount > 5)) return false;
-             if (msF === 'range-6-10' && (r.missCount < 6 || r.missCount > 10)) return false;
-             if (msF === 'range-11' && r.missCount < 11) return false;
-          }
+          
+          // Min-Max Filter
+          if (msMin !== "" && r.missCount < parseInt(msMin)) return false;
+          if (msMax !== "" && r.missCount > parseInt(msMax)) return false;
+
           if (dfF !== 'all' && r.difficultyRaw !== dfF) return false;
           if (lvF && r.level != lvF) return false;
           if (tiF && !r.title.toLowerCase().includes(tiF)) return false;
@@ -1190,6 +1158,29 @@
         renderGrid(list);
       }
 
+      // --- Batch Selection Logic ---
+      function toggleSelect(id) {
+          if (selectedIds.has(id)) selectedIds.delete(id);
+          else selectedIds.add(id);
+          
+          updateBatchButton();
+          
+          // Toggle Visual
+          const card = document.getElementById(`card-${id}`);
+          if (card) {
+              if (selectedIds.has(id)) card.classList.add('selected');
+              else card.classList.remove('selected');
+          }
+      }
+
+      function updateBatchButton() {
+          const btn = document.getElementById('batch_edit_button');
+          const countSpan = document.getElementById('selected-count');
+          countSpan.innerText = selectedIds.size;
+          if (selectedIds.size > 0) btn.style.display = 'inline-flex';
+          else btn.style.display = 'none';
+      }
+
       function renderGrid(records) {
         const grid = document.getElementById('grid');
         document.getElementById('result-count').innerText = `表示: ${records.length} 件`;
@@ -1201,13 +1192,17 @@
           let large = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
           const missDisplay = rec.isFC ? `<span class="miss-val zero">FC-0</span>` : `FC -<span class="miss-val">${rec.missCount}</span>`;
           const badge = rec.isFC ? `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
+          
+          const isSelected = selectedIds.has(rec.id);
 
           grid.innerHTML += `
-            <div class="card ${rec.isFC?'is-fc':''}">
+            <div id="card-${rec.id}" class="card ${rec.isFC?'is-fc':''} ${isSelected?'selected':''}">
+              <div class="card-select-overlay">
+                  <input type="checkbox" ${isSelected?'checked':''} onclick="event.stopPropagation(); toggleSelect('${rec.id}')" style="width:20px; height:20px; cursor:pointer;">
+              </div>
               <div class="card-img-container" onclick="openImageModal('${large}')">
                 <div class="card-actions">
                     <button class="action-btn btn-del" onclick="confirmDelete('${rec.id}', '${escapeHtml(rec.title)}')" title="削除"><span class="material-symbols-outlined">delete</span></button>
-                    <button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${rec.id}')" title="編集"><span class="material-symbols-outlined">edit</span></button>
                 </div>
                 ${badge}
                 <div class="img-loader-spinner"></div>
