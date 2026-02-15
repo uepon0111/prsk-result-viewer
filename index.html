@@ -687,7 +687,7 @@
             }
 
             // --- 2. 赤枠: 楽曲タイトル (難易度の右側) ---
-            const rTitle = {x:0.18, y:0.02, w:0.25, h:0.05};
+            const rTitle = {x:0.19, y:0.01, w:0.30, h:0.05};
             drawDebugRect(rTitle, "red");
 
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
@@ -720,7 +720,7 @@
 
             // --- 4. 緑枠: ミス数 (左下) ---
             // GOOD, BAD, MISS があるエリア（左下のさらに下半分）
-            const rMiss = {x:0.15, y:0.58, w:0.25, h:0.20};
+            const rMiss = {x:0.10, y:0.55, w:0.22, h:0.25};
             drawDebugRect(rMiss, "#00ff00");
 
             const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'high-contrast');
