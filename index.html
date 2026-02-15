@@ -26,30 +26,33 @@
       body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; padding-bottom: 80px; }
       .container { max-width: 1200px; margin: 0 auto; }
       h2 { display: flex; align-items: center; gap: 10px; color: #444; }
-      .material-symbols-outlined { font-size: 1.2rem; vertical-align: sub; }
       
-      /* Auth Buttons */
-      .auth-section { text-align: right; margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+      /* Auth & Header Buttons */
+      .auth-section { text-align: right; margin-bottom: 20px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap;}
       .btn-auth {
-        background-color: #4285f4; color: white; border: none; padding: 10px 20px;
-        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;
+        background-color: #4285f4; color: white; border: none; padding: 8px 16px;
+        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem;
       }
-      .btn-auth:hover { background-color: #357ae8; }
+      .btn-auth:hover { background-color: #357ae8; opacity: 0.9; }
       .btn-signout { background-color: #dc3545; }
       .btn-upload { background-color: #28a745; }
-      #auth-status { margin-right: 10px; align-self: center; font-size: 0.9rem; color: #666; }
+      
+      /* Select Mode Toggle Button (New Location) */
+      .btn-mode-toggle {
+        background-color: #fff; color: #555; border: 1px solid #ccc; padding: 8px 16px;
+        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem;
+        transition: all 0.2s;
+      }
+      .btn-mode-toggle.active { background-color: #e8f0fe; color: #007bff; border-color: #007bff; }
+
+      #auth-status { margin-right: 10px; font-size: 0.9rem; color: #666; }
 
       /* Controls */
-      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; align-items: end;}
+      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end;}
       .control-group { display: flex; flex-direction: column; }
       .control-group label { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
       select, input[type="number"], input[type="text"], input[type="file"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; background-color: #fafafa; }
       
-      .checkbox-wrapper { display: flex; align-items: center; gap: 8px; height: 42px; background-color: #fafafa; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; }
-      input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--diff-master); }
-      .checkbox-label { font-size: 0.9rem; cursor: pointer; user-select: none; }
-      
-      /* New Inputs for Range */
       .range-inputs { display: flex; align-items: center; gap: 5px; }
       .range-inputs input { width: 100%; text-align: center; }
 
@@ -57,7 +60,7 @@
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
       
       /* Card */
-      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; cursor: pointer; }
+      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; }
       .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
       .card.is-fc { border-color: var(--fc-color); }
       
@@ -65,13 +68,27 @@
       .card.selected { border-color: var(--selected-border); background-color: #f0f7ff; transform: scale(0.98); }
       .card.selected::after { content: "check_circle"; font-family: 'Material Symbols Outlined'; position: absolute; top: 10px; right: 10px; font-size: 24px; color: var(--selected-border); z-index: 20; background: white; border-radius: 50%; }
 
-      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; }
-      .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
+      /* Individual Actions (Hover on Image) */
+      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; group: card-hover; }
+      .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; cursor: pointer;}
       .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
       
-      .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
+      .card-actions-overlay {
+        position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.6); padding: 5px;
+        display: flex; justify-content: flex-end; gap: 8px; opacity: 0; transition: opacity 0.2s; z-index: 10;
+        pointer-events: none; /* Initially allow clicks to pass through to image */
+      }
+      .card:hover .card-actions-overlay { opacity: 1; pointer-events: auto; }
+      .btn-card-action {
+        background: rgba(255,255,255,0.9); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;
+        display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: bold; color: #333;
+      }
+      .btn-card-action:hover { background: #fff; transform: scale(1.05); }
+      .btn-card-action.del:hover { color: #dc3545; }
+
+      .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; pointer-events: none;}
       
-      .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+      .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; cursor: default; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
       .tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; letter-spacing: 0.5px; }
       .tag.lvl { background-color: #555; }
@@ -98,7 +115,14 @@
       
       /* Split View Layout */
       .split-container { display: flex; flex: 1; overflow: hidden; }
-      .sidebar { width: 250px; border-right: 1px solid #eee; overflow-y: auto; background-color: #f8f9fa; display: flex; flex-direction: column; flex-shrink: 0; }
+      
+      /* Sidebar with Toolbar */
+      .sidebar-container { width: 250px; border-right: 1px solid #eee; display: flex; flex-direction: column; flex-shrink: 0; background-color: #f8f9fa; }
+      .sidebar-toolbar { padding: 10px; border-bottom: 1px solid #eee; display: flex; gap: 5px; justify-content: center; background: #fff; }
+      .btn-mini-action { font-size: 0.75rem; padding: 5px 10px; background: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+      .btn-mini-action:hover { background: #e2e6ea; }
+
+      .sidebar { overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
       .sidebar-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.2s; position: relative;}
       .sidebar-item:hover { background-color: #eee; }
       .sidebar-item.active { background-color: var(--active-color); border-left: 4px solid #007bff; }
@@ -147,7 +171,6 @@
       .btn-batch { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; color: white; }
       .btn-batch.delete { background-color: #dc3545; }
       .btn-batch.edit { background-color: #007bff; }
-      .btn-batch.analyze { background-color: #17a2b8; }
 
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
@@ -177,7 +200,14 @@
         </div>
 
         <div id="batch-workspace" class="split-container" style="display: none;">
-            <div class="sidebar" id="batch-sidebar-list"></div>
+            <div class="sidebar-container">
+                <div class="sidebar-toolbar">
+                    <button class="btn-mini-action" onclick="runBatchAnalysis(editorQueue)">
+                        <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> すべて再解析
+                    </button>
+                </div>
+                <div class="sidebar" id="batch-sidebar-list"></div>
+            </div>
             
             <div class="main-area">
                 <div id="batch-editor-container" class="editor-layout" style="display: none;">
@@ -186,7 +216,7 @@
                     </div>
                     <div class="form-pane">
                         <button type="button" class="btn-reanalyze" onclick="reanalyzeCurrentItem()">
-                            <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> 解析をやり直す
+                            <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> この画像を解析
                         </button>
 
                         <div class="form-group">
@@ -252,6 +282,10 @@
       <div class="auth-section">
         <span id="auth-status">未ログイン</span>
         
+        <button id="btn-select-mode" class="btn-mode-toggle" onclick="toggleSelectMode()">
+            <span class="material-symbols-outlined">check_box</span> 選択モード
+        </button>
+
         <button id="upload_button" class="btn-auth btn-upload" onclick="openBatchModal('upload')" style="display: none;">
           <span class="material-symbols-outlined">add_photo_alternate</span> アップロード
         </button>
@@ -317,13 +351,6 @@
           <label><span class="material-symbols-outlined">search</span> レベル検索</label>
           <input type="number" id="filter-level" placeholder="" oninput="updateView()">
         </div>
-
-        <div class="control-group">
-            <label><span class="material-symbols-outlined">check_box</span> モード切替</label>
-            <button id="btn-select-mode" onclick="toggleSelectMode()" style="width:100%; padding: 10px; background:white; border:1px solid #ccc; border-radius:8px; cursor:pointer;">
-                選択モード: <span id="mode-text">OFF</span>
-            </button>
-        </div>
       </div>
 
       <div class="status-bar">
@@ -340,8 +367,7 @@
 
     <div id="batch-actions">
         <button class="btn-batch delete" onclick="batchDelete()"><span class="material-symbols-outlined">delete</span> 削除</button>
-        <button class="btn-batch edit" onclick="batchEdit()"><span class="material-symbols-outlined">edit</span> 編集</button>
-        <button class="btn-batch analyze" onclick="batchReanalyze()"><span class="material-symbols-outlined">analytics</span> 再解析</button>
+        <button class="btn-batch edit" onclick="batchEdit()"><span class="material-symbols-outlined">edit_note</span> 編集・解析</button>
         <div style="margin-left:auto; display:flex; align-items:center; color:#666;">
             <span id="selected-count">0</span> 件選択中
         </div>
@@ -525,11 +551,10 @@
             document.getElementById('up-file').value = "";
             document.getElementById('btn-exec-batch').innerText = "全てアップロード";
         } else {
-            document.getElementById('batch-modal-title').innerHTML = '<span class="material-symbols-outlined">edit_square</span> 一括編集モード';
+            document.getElementById('batch-modal-title').innerHTML = '<span class="material-symbols-outlined">edit_square</span> 一括編集・解析モード';
             document.getElementById('upload-initial').style.display = 'none';
             document.getElementById('batch-workspace').style.display = 'flex';
             document.getElementById('btn-exec-batch').innerText = "保存して反映";
-            // Edit mode specific init is handled by caller (batchEdit)
         }
       }
 
@@ -579,22 +604,32 @@
           
           const targets = allRecords.filter(r => selectedIds.has(r.id));
           document.getElementById('batch-status-msg').innerText = "編集データを準備中...";
+          populateEditQueue(targets);
+      }
+      
+      async function editSingle(id) {
+          const rec = allRecords.find(r => r.id === id);
+          if(!rec) return;
+          openBatchModal('edit');
+          document.getElementById('batch-status-msg').innerText = "データを準備中...";
+          populateEditQueue([rec]);
+      }
 
-          for (const rec of targets) {
+      function populateEditQueue(records) {
+          for (const rec of records) {
               const qId = "edit_" + rec.id;
-              // Use high-res thumbnail for preview/ocr
               const highResUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
               
               editorQueue.push({
                   id: qId,
-                  file: null, // No file object for existing items
+                  file: null, 
                   imgUrl: highResUrl,
-                  status: 'existing', // Mark as already existing
+                  status: 'existing', 
                   data: { 
                       title: rec.title, 
                       level: rec.level, 
                       diff: rec.difficultyRaw, 
-                      good: 0, bad: 0, missDetail: 0, // Breakdown unknown for existing
+                      good: 0, bad: 0, missDetail: 0, 
                       totalMiss: rec.missCount,
                       musicId: null 
                   },
@@ -605,18 +640,21 @@
           }
           if (editorQueue.length > 0) selectItem(editorQueue[0].id);
           checkBatchButton();
-          document.getElementById('batch-status-msg').innerText = "編集準備完了";
+          document.getElementById('batch-status-msg').innerText = "準備完了";
       }
-      
-      // Initialize Batch Re-analyze from Selection
-      async function batchReanalyze() {
-          if (selectedIds.size === 0) return;
-          // Open in Edit mode but immediately trigger analysis
-          await batchEdit();
-          // Filter all items and run analysis
-          document.getElementById('batch-status-msg').innerText = "一括再解析を開始します...";
-          await runBatchAnalysis(editorQueue);
-          document.getElementById('batch-status-msg').innerText = "再解析完了";
+
+      async function deleteSingle(id) {
+          if(!confirm("このリザルトを削除してもよろしいですか？")) return;
+           const loader = document.getElementById('loader');
+          loader.style.display = 'flex';
+          try {
+              await gapi.client.drive.files.delete({ fileId: id });
+              alert("削除しました");
+              await fetchDataFromDrive();
+          } catch (e) {
+              alert("削除エラー: " + e.message);
+              document.getElementById('loader').style.display = 'none';
+          }
       }
 
       function renderSidebarItem(id) {
@@ -627,10 +665,6 @@
         div.onclick = () => selectItem(id);
         
         let thumbUrl = item.imgUrl;
-        if (currentMode === 'edit' && item.originalId) {
-             // Use smaller thumb for sidebar if available in original record to save bandwidth? 
-             // Currently item.imgUrl is high res. CSS resizes it.
-        }
 
         div.innerHTML = `
             <img src="${thumbUrl}" class="sidebar-thumb" crossorigin="anonymous">
@@ -731,7 +765,7 @@
       // --- Analysis Logic ---
       
       async function runBatchAnalysis(itemsToAnalyze) {
-          if(itemsToAnalyze.length === 0) return;
+          if(!itemsToAnalyze || itemsToAnalyze.length === 0) return;
           const statusMsg = document.getElementById('batch-status-msg');
           statusMsg.innerText = "解析中... (しばらくお待ちください)";
           
@@ -741,8 +775,6 @@
               const el = document.getElementById(`sb-status-${item.id}`);
               if(el) { el.innerText = "解析中"; el.className = "upload-status processing"; }
               
-              // If image is on drive, we need to handle it carefully. 
-              // imgUrl is a blob (upload) or a google content URL (edit).
               const img = new Image();
               img.crossOrigin = "anonymous";
               img.src = item.imgUrl;
@@ -768,10 +800,9 @@
                   item.status = 'error';
               }
               
-              updateSidebarStatus(item.id); // Or error update
+              updateSidebarStatus(item.id); 
               if (item.status === 'done') {
                  document.getElementById(`sb-title-${item.id}`).innerText = item.data.title;
-                 // If currently selected, refresh form
                  if (activeItemId === item.id) selectItem(item.id);
               } else {
                  const statEl = document.getElementById(`sb-status-${item.id}`);
@@ -1006,17 +1037,10 @@
       function toggleSelectMode() {
           isSelectMode = !isSelectMode;
           const btn = document.getElementById('btn-select-mode');
-          const txt = document.getElementById('mode-text');
           if (isSelectMode) {
-              btn.style.backgroundColor = "#e8f0fe";
-              btn.style.borderColor = "#007bff";
-              btn.style.color = "#007bff";
-              txt.innerText = "ON";
+              btn.classList.add('active');
           } else {
-              btn.style.backgroundColor = "white";
-              btn.style.borderColor = "#ccc";
-              btn.style.color = "inherit";
-              txt.innerText = "OFF";
+              btn.classList.remove('active');
               selectedIds.clear();
               updateSelectionUI();
           }
@@ -1072,7 +1096,6 @@
       function updateView() {
         if (!allRecords) return;
         const fcF = document.getElementById('filter-fc').value;
-        // Miss Filter (Range)
         const msMin = document.getElementById('filter-miss-min').value;
         const msMax = document.getElementById('filter-miss-max').value;
         
@@ -1086,15 +1109,12 @@
           if (fcF === 'fc' && !r.isFC) return false;
           if (fcF === 'unfc' && r.isFC) return false;
           
-          // Range check
-          if (!r.isFC) { // Only check range for non-FC (or treat FC as 0)
+          if (!r.isFC) { 
               const mVal = r.missCount;
               if (msMin !== "" && mVal < parseInt(msMin)) return false;
               if (msMax !== "" && mVal > parseInt(msMax)) return false;
           } else {
-              // FC is 0 miss.
               if (msMin !== "" && 0 < parseInt(msMin)) return false;
-              // if Max is 0 or more, FC is included.
           }
 
           if (dfF !== 'all' && r.difficultyRaw !== dfF) return false;
@@ -1137,11 +1157,27 @@
 
           // Onclick logic
           const clickAction = isSelectMode ? `toggleSelection('${rec.id}')` : `openImageModal('${large}')`;
+          
+          // Action Buttons (Only visible when NOT in select mode)
+          let actions = '';
+          if (!isSelectMode) {
+              actions = `
+                <div class="card-actions-overlay">
+                    <button class="btn-card-action" onclick="event.stopPropagation(); editSingle('${rec.id}')">
+                        <span class="material-symbols-outlined" style="font-size:1rem;">edit</span> 編集
+                    </button>
+                    <button class="btn-card-action del" onclick="event.stopPropagation(); deleteSingle('${rec.id}')">
+                        <span class="material-symbols-outlined" style="font-size:1rem;">delete</span> 削除
+                    </button>
+                </div>
+              `;
+          }
 
           grid.innerHTML += `
             <div class="card ${rec.isFC?'is-fc':''} ${isSel}" id="card-${rec.id}" onclick="${clickAction}">
               <div class="card-img-container">
                 ${badge}
+                ${actions}
                 <div class="img-loader-spinner"></div>
                 ${thumb ? `<img src="${thumb}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` : '<span style="color:#aaa;">NO IMAGE</span>'}
               </div>
