@@ -664,9 +664,9 @@
 
             const worker = await Tesseract.createWorker('jpn+eng');
 
-            // --- 1. 青枠: 難易度 (左上アイコン) ---
-            // 左上隅をターゲットにする。白黒反転して読む。
-            const rDiff = {x:0.20, y:0.07, w:0.10, h:0.04};
+            // --- 1. 青枠: 難易度 (画面中央寄り上部) ---
+            // ※添付画像(タブレット比率)に合わせて調整
+            const rDiff = {x:0.51, y:0.18, w:0.13, h:0.08};
             drawDebugRect(rDiff, "blue");
 
             const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'invert');
@@ -687,7 +687,8 @@
             }
 
             // --- 2. 赤枠: 楽曲タイトル (難易度の右側) ---
-            const rTitle = {x:0.19, y:0.01, w:0.30, h:0.05};
+            // ※添付画像に合わせて調整
+            const rTitle = {x:0.64, y:0.18, w:0.34, h:0.08};
             drawDebugRect(rTitle, "red");
 
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
@@ -718,9 +719,9 @@
                 }
             }
 
-            // --- 4. 緑枠: ミス数 (左下) ---
-            // GOOD, BAD, MISS があるエリア（左下のさらに下半分）
-            const rMiss = {x:0.10, y:0.55, w:0.22, h:0.25};
+            // --- 4. 緑枠: ミス数 (右下判定エリア) ---
+            // GOOD, BAD, MISS があるエリア (タブレット配置: 右下)
+            const rMiss = {x:0.55, y:0.65, w:0.40, h:0.30};
             drawDebugRect(rMiss, "#00ff00");
 
             const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'high-contrast');
@@ -732,7 +733,7 @@
             const lines = missText.split('\n');
             let countGood = 0, countBad = 0, countMiss = 0;
             
-            // 正規表現で数値抽出
+            // 正規表現で数値抽出 (行末にある数値を拾う)
             const parseLine = (line, regex) => {
                 if (regex.test(line)) {
                     const nums = line.match(/\d+/g);
