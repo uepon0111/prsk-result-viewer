@@ -688,7 +688,7 @@
             const worker = await Tesseract.createWorker('jpn'); // 基本的に日本語設定で読む
 
             // --- 1. 青枠: 難易度 ---
-            const rDiff = {x:0.035, y:0.02, w:0.15, h:0.08};
+            const rDiff = {x:0.20, y:0.07, w:0.10, h:0.04};
             drawDebugRect(rDiff, "blue");
             const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'invert');
             // 難易度は英語なので eng を指定して認識
@@ -709,7 +709,7 @@
             }
 
             // --- 2. 赤枠: 楽曲タイトル ---
-            const rTitle = {x:0.20, y:0.02, w:0.55, h:0.08};
+            const rTitle = {x:0.18, y:0.01, w:0.30, h:0.04};
             drawDebugRect(rTitle, "red");
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
             // タイトルは日本語含む
