@@ -628,8 +628,6 @@
         }
         
         // 閾値を緩く設定（0.6など）して、多少違っても一番近いものを返す
-        // ただし、あまりにもかけ離れている場合(全て違う文字など)は誤検知リスクがあるが、
-        // ユーザ要望により「リンクの中から選ぶ」ことを優先する。
         return bestMatch; 
       }
 
@@ -685,13 +683,14 @@
                );
             };
 
-            const worker = await Tesseract.createWorker('jpn'); // 基本的に日本語設定で読む
+            // 日本語と英語の両方をロード (英語は数字とAPPEND/GOOD等の認識に強い)
+            const worker = await Tesseract.createWorker(['jpn', 'eng']);
 
             // --- 1. 青枠: 難易度 ---
             const rDiff = {x:0.20, y:0.07, w:0.10, h:0.04};
             drawDebugRect(rDiff, "blue");
             const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'invert');
-            // 難易度は英語なので eng を指定して認識
+            // 難易度は英語指定
             const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
             const diffText = diffRet.data.text.toUpperCase();
             console.log("[OCR] Diff:", diffText);
@@ -699,7 +698,10 @@
             let detectedDiffCode = null;
             let detectedDiffKey = null;
 
-            if (diffText.includes("APPEND")) { detectedDiffCode = "A"; detectedDiffKey = "append"; }
+            // APPEND判定の強化: "APPEND"が崩れて認識されるケースをカバー
+            if (diffText.includes("APPEND") || diffText.includes("APP") || diffText.includes("PEND") || diffText.includes("PPE")) { 
+                detectedDiffCode = "A"; detectedDiffKey = "append"; 
+            }
             else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
             else if (diffText.includes("EXPERT")) { detectedDiffCode = "E"; detectedDiffKey = "expert"; }
             else if (diffText.includes("HARD")) { detectedDiffCode = "H"; detectedDiffKey = "hard"; }
@@ -712,7 +714,7 @@
             const rTitle = {x:0.19, y:0.01, w:0.32, h:0.05};
             drawDebugRect(rTitle, "red");
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
-            // タイトルは日本語含む
+            // タイトルは日本語含む (デフォルトjpnを使用)
             const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
             const titleText = titleRet.data.text;
             console.log("[OCR] Title Raw:", titleText);
@@ -750,28 +752,29 @@
             drawDebugRect(rMiss, "#00ff00");
 
             const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'high-contrast');
-            const missRet = await worker.recognize(missBlob);
+            // 数字とアルファベットなので英語モードを使用（重要）
+            const missRet = await worker.recognize(missBlob, { lang: 'eng' });
             const missText = missRet.data.text;
             
             const lines = missText.split('\n');
             let countGood = 0, countBad = 0, countMiss = 0;
             
-            const parseLine = (line, regex) => {
-                if (regex.test(line)) {
-                    const nums = line.match(/\d+/g);
-                    if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
-                }
+            // 行末の数字を探すヘルパー
+            const parseLine = (line) => {
+                const nums = line.match(/\d+/g);
+                if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
                 return 0;
             };
 
-            const regGood = /G[O0QD]{2}D/i; 
+            // GOOD判定の正規表現を強化 (G,6,C始まり、O,0,Q,D中間、D,P終わりなど許容)
+            const regGood = /[G6C][O0Q]{2}[DP]/i; 
             const regBad  = /BAD/i;
             const regMiss = /MISS/i;
 
             lines.forEach(line => {
-              if (regGood.test(line)) countGood = parseLine(line, regGood);
-              if (regBad.test(line))  countBad  = parseLine(line, regBad);
-              if (regMiss.test(line)) countMiss = parseLine(line, regMiss);
+              if (regGood.test(line)) countGood = parseLine(line);
+              if (regBad.test(line))  countBad  = parseLine(line);
+              if (regMiss.test(line)) countMiss = parseLine(line);
             });
 
             const totalMiss = countGood + countBad + countMiss;
@@ -779,7 +782,9 @@
 
             await worker.terminate();
 
-            statusDiv.innerText = `解析完了: ${matchedMusic ? matchedMusic.title : 'タイトル不明'} (Lv.${document.getElementById('up-level').value})`;
+            // 解析完了メッセージに内訳を追加
+            const detailStr = `(G:${countGood}, B:${countBad}, M:${countMiss})`;
+            statusDiv.innerText = `解析完了: ${matchedMusic ? matchedMusic.title : 'タイトル不明'} ${detailStr} (Lv.${document.getElementById('up-level').value})`;
             statusDiv.style.color = "#28a745";
 
           } catch (err) {
