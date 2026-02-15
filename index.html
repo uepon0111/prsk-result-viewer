@@ -88,27 +88,42 @@
       .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
       .modal-content-img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
       
-      /* Form Modal */
+      /* Form Modal Generic */
       .modal-form-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 800px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
       .modal-header { font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
-      .form-group { margin-bottom: 10px; }
+      .form-group { margin-bottom: 15px; }
       .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.8rem; color:#555; }
       .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
       .btn-cancel { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
+      .btn-analyze { background-color: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; }
+
+      /* Upload Specific UI */
+      .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; color: #777; transition: all 0.2s; cursor: pointer; margin-bottom: 20px; background-color: #fcfcfc; }
+      .drop-zone:hover, .drop-zone.dragover { border-color: #007bff; background-color: #f0f7ff; color: #007bff; }
+      .drop-zone .material-symbols-outlined { font-size: 48px; display: block; margin-bottom: 10px; color: inherit; }
       
-      /* Upload Queue List */
-      #upload-list { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-      .upload-item { display: flex; gap: 15px; padding: 15px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; align-items: flex-start; }
-      .upload-item-img { width: 120px; flex-shrink: 0; }
-      .upload-item-img img { width: 100%; height: auto; border-radius: 4px; display: block; }
-      .upload-item-details { flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .upload-item-full { grid-column: 1 / -1; }
-      .upload-status { font-size: 0.8rem; margin-top: 5px; font-weight: bold; }
-      .upload-status.processing { color: #007bff; }
-      .upload-status.done { color: #28a745; }
-      .upload-status.error { color: #dc3545; }
+      #upload-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; width: 100%; }
+      .upload-item { display: flex; flex-direction: column; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.03); overflow: hidden; position: relative; }
+      .upload-item-header { padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+      .upload-item-body { padding: 10px; display: flex; gap: 10px; }
+      .upload-item-img { width: 100px; height: 100px; flex-shrink: 0; background: #eee; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+      .upload-item-img img { width: 100%; height: 100%; object-fit: cover; }
+      .upload-item-fields { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+      .btn-remove-item { background: none; border: none; color: #dc3545; cursor: pointer; padding: 4px; display: flex; }
+      .btn-remove-item:hover { background: rgba(220, 53, 69, 0.1); border-radius: 4px; }
+      
+      .upload-status { font-weight: bold; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
+      .upload-status.processing { background-color: #e2f0ff; color: #007bff; }
+      .upload-status.done { background-color: #d4edda; color: #155724; }
+      .upload-status.error { background-color: #f8d7da; color: #721c24; }
+
+      /* Edit Modal Layout */
+      .edit-layout { display: flex; gap: 20px; flex-wrap: wrap; }
+      .edit-preview { flex: 1; min-width: 250px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; position: relative; }
+      .edit-preview img { max-width: 100%; max-height: 400px; object-fit: contain; }
+      .edit-form { flex: 1; min-width: 250px; }
 
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
@@ -122,15 +137,16 @@
     </div>
 
     <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
-      <div class="modal-form-content">
+      <div class="modal-form-content" style="max-width: 900px;">
         <div class="modal-header">
           <span><span class="material-symbols-outlined">cloud_upload</span> リザルト一括アップロード</span>
           <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
         </div>
         
-        <div class="form-group">
-          <label>画像ファイル (複数選択可)</label>
-          <input type="file" id="up-file" accept="image/*" multiple>
+        <div id="drop-zone" class="drop-zone" onclick="document.getElementById('up-file').click()">
+          <span class="material-symbols-outlined">upload_file</span>
+          <div>クリックして画像を選択、または画像をここにドラッグ＆ドロップ</div>
+          <input type="file" id="up-file" accept="image/*" multiple style="display: none;">
         </div>
 
         <div id="upload-status-msg" style="margin-bottom:10px; font-weight:bold; color:#007bff;"></div>
@@ -146,37 +162,50 @@
     </div>
 
     <div id="editModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
-      <div class="modal-form-content" style="max-width: 500px;">
+      <div class="modal-form-content" style="max-width: 800px;">
         <div class="modal-header">
           <span><span class="material-symbols-outlined">edit</span> 情報編集</span>
           <span style="cursor:pointer;" onclick="closeEditModal()">&times;</span>
         </div>
         
-        <input type="hidden" id="edit-id">
-        <input type="hidden" id="edit-original-parent">
-        
-        <div class="form-group">
-          <label>曲名</label>
-          <input type="text" id="edit-title" style="width: 100%; box-sizing: border-box;">
-        </div>
-        <div style="display:flex; gap:10px;">
-            <div class="form-group" style="flex:1;">
-                <label>レベル</label>
-                <input type="number" id="edit-level" style="width: 100%; box-sizing: border-box;">
+        <div class="edit-layout">
+            <div class="edit-preview">
+                <img id="edit-preview-img" src="" alt="Preview">
+                <div style="position: absolute; bottom: 10px; right: 10px;">
+                    <button class="btn-analyze" onclick="runEditAnalysis()">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析
+                    </button>
+                </div>
             </div>
-            <div class="form-group" style="flex:1;">
-                <label>難易度</label>
-                <select id="edit-diff" style="width: 100%; box-sizing: border-box;">
-                    <option value="A">Append</option>
-                    <option value="M">Master</option>
-                    <option value="E">Expert</option>
-                    <option value="H">Hard</option>
-                </select>
+
+            <div class="edit-form">
+                <input type="hidden" id="edit-id">
+                <input type="hidden" id="edit-original-parent">
+                
+                <div class="form-group">
+                  <label>曲名</label>
+                  <input type="text" id="edit-title" style="width: 100%; box-sizing: border-box;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="form-group" style="flex:1;">
+                        <label>レベル</label>
+                        <input type="number" id="edit-level" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>難易度</label>
+                        <select id="edit-diff" style="width: 100%; box-sizing: border-box;">
+                            <option value="A">Append</option>
+                            <option value="M">Master</option>
+                            <option value="E">Expert</option>
+                            <option value="H">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ミス数</label>
+                    <input type="number" id="edit-miss" min="0" style="width: 100%; box-sizing: border-box;">
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <label>ミス数</label>
-            <input type="number" id="edit-miss" min="0" style="width: 100%; box-sizing: border-box;">
         </div>
 
         <div class="form-actions">
@@ -534,7 +563,6 @@
         });
       }
 
-      // ファイルの移動とリネーム
       async function moveAndRenameFile(fileId, newName, newParentId, oldParentId) {
           const body = { name: newName };
           const params = {
@@ -553,6 +581,27 @@
 
       let uploadQueue = []; // { id, file, status, data: {title, level, diff, miss} }
 
+      // Drag & Drop Handling
+      const dropZone = document.getElementById('drop-zone');
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+          handleFiles(e.dataTransfer.files);
+        }
+      });
+
       function openUploadModal() {
         document.getElementById('uploadModal').style.display = 'flex';
         document.getElementById('up-file').value = "";
@@ -566,9 +615,8 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // --- OCR Logic Refactored for reuse ---
+      // --- OCR Logic ---
       
-      // 画像切り抜き + 前処理
       async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'filter-standard') {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
@@ -651,82 +699,89 @@
           return diffEntry ? diffEntry.playLevel : null;
       }
 
-      // 単体解析ロジック
-      async function analyzeImage(file, worker) {
+      // コア解析ロジック（img要素を受け取る）
+      async function analyzeLoadedImage(imgElement, worker) {
+         try {
+            // 1. Diff
+            const diffBlob = await cropImage(imgElement, 0.20, 0.07, 0.10, 0.04, 'threshold-diff');
+            const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
+            const diffText = diffRet.data.text.toUpperCase();
+            
+            let detectedDiffCode = "E"; // default
+            let detectedDiffKey = "expert";
+            if (diffText.match(/A?P{2}E?N?D?/)) { detectedDiffCode = "A"; detectedDiffKey = "append"; }
+            else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
+            else if (diffText.includes("EXPERT")) { detectedDiffCode = "E"; detectedDiffKey = "expert"; }
+            else if (diffText.includes("HARD")) { detectedDiffCode = "H"; detectedDiffKey = "hard"; }
+
+            // 2. Title
+            const titleBlob = await cropImage(imgElement, 0.19, 0.01, 0.32, 0.05, 'filter-standard');
+            const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
+            const titleText = titleRet.data.text;
+            
+            const matchedMusic = findBestMatchMusic(titleText);
+            const finalTitle = matchedMusic ? matchedMusic.title : titleText.replace(/\r?\n/g, '').trim();
+            const musicId = matchedMusic ? matchedMusic.id : null;
+
+            // 3. Level
+            let level = "";
+            if (musicId) {
+                level = getLevelFromDb(musicId, detectedDiffKey) || "";
+            }
+
+            // 4. Miss
+            const missBlob = await cropImage(imgElement, 0.10, 0.55, 0.20, 0.28, 'filter-standard');
+            const missRet = await worker.recognize(missBlob, { lang: 'jpn' });
+            const missText = missRet.data.text;
+            const lines = missText.split('\n');
+            let countGood = 0, countBad = 0, countMiss = 0;
+            
+            const parseLine = (line, regex) => {
+                if (regex.test(line)) {
+                    const nums = line.match(/\d+/g);
+                    if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
+                }
+                return 0;
+            };
+            const regGood = /G[O0QD]{2}D/i; 
+            const regBad  = /BAD/i;
+            const regMiss = /MISS/i;
+            lines.forEach(line => {
+              if (regGood.test(line)) countGood = parseLine(line, regGood);
+              if (regBad.test(line))  countBad  = parseLine(line, regBad);
+              if (regMiss.test(line)) countMiss = parseLine(line, regMiss);
+            });
+            const totalMiss = countGood + countBad + countMiss;
+
+            return {
+                title: finalTitle,
+                level: level,
+                diff: detectedDiffCode,
+                miss: totalMiss,
+                musicId: musicId
+            };
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+      }
+
+      // ファイルオブジェクトから画像生成して解析
+      async function analyzeImageFile(file, worker) {
         return new Promise((resolve) => {
             const img = new Image();
             img.onload = async function() {
-                try {
-                    // 1. Diff
-                    const diffBlob = await cropImage(img, 0.20, 0.07, 0.10, 0.04, 'threshold-diff');
-                    const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
-                    const diffText = diffRet.data.text.toUpperCase();
-                    
-                    let detectedDiffCode = "E"; // default
-                    let detectedDiffKey = "expert";
-                    if (diffText.match(/A?P{2}E?N?D?/)) { detectedDiffCode = "A"; detectedDiffKey = "append"; }
-                    else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
-                    else if (diffText.includes("EXPERT")) { detectedDiffCode = "E"; detectedDiffKey = "expert"; }
-                    else if (diffText.includes("HARD")) { detectedDiffCode = "H"; detectedDiffKey = "hard"; }
-
-                    // 2. Title
-                    const titleBlob = await cropImage(img, 0.19, 0.01, 0.32, 0.05, 'filter-standard');
-                    const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
-                    const titleText = titleRet.data.text;
-                    
-                    const matchedMusic = findBestMatchMusic(titleText);
-                    const finalTitle = matchedMusic ? matchedMusic.title : titleText.replace(/\r?\n/g, '').trim();
-                    const musicId = matchedMusic ? matchedMusic.id : null;
-
-                    // 3. Level
-                    let level = "";
-                    if (musicId) {
-                        level = getLevelFromDb(musicId, detectedDiffKey) || "";
-                    }
-
-                    // 4. Miss
-                    const missBlob = await cropImage(img, 0.10, 0.55, 0.20, 0.28, 'filter-standard');
-                    const missRet = await worker.recognize(missBlob, { lang: 'jpn' });
-                    const missText = missRet.data.text;
-                    const lines = missText.split('\n');
-                    let countGood = 0, countBad = 0, countMiss = 0;
-                    
-                    const parseLine = (line, regex) => {
-                        if (regex.test(line)) {
-                            const nums = line.match(/\d+/g);
-                            if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
-                        }
-                        return 0;
-                    };
-                    const regGood = /G[O0QD]{2}D/i; 
-                    const regBad  = /BAD/i;
-                    const regMiss = /MISS/i;
-                    lines.forEach(line => {
-                      if (regGood.test(line)) countGood = parseLine(line, regGood);
-                      if (regBad.test(line))  countBad  = parseLine(line, regBad);
-                      if (regMiss.test(line)) countMiss = parseLine(line, regMiss);
-                    });
-                    const totalMiss = countGood + countBad + countMiss;
-
-                    resolve({
-                        title: finalTitle,
-                        level: level,
-                        diff: detectedDiffCode,
-                        miss: totalMiss,
-                        musicId: musicId // レベル再計算用
-                    });
-                } catch (e) {
-                    console.error(e);
-                    resolve(null);
-                }
+                const res = await analyzeLoadedImage(img, worker);
+                resolve(res);
             };
             img.src = URL.createObjectURL(file);
         });
       }
 
-      // ファイル選択イベント (複数対応)
-      document.getElementById('up-file').addEventListener('change', async function(e) {
-        const files = Array.from(e.target.files);
+      // ファイル選択・ドロップ時の処理
+      document.getElementById('up-file').addEventListener('change', (e) => handleFiles(e.target.files));
+
+      async function handleFiles(files) {
         if (files.length === 0) return;
 
         const listContainer = document.getElementById('upload-list');
@@ -736,50 +791,51 @@
         execBtn.disabled = true;
         statusMsg.innerText = "画像を解析中... (そのままお待ちください)";
 
-        // キューに追加
         const worker = await Tesseract.createWorker(['jpn', 'eng']);
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const queueId = Date.now() + "_" + i;
             
-            // UI作成
+            // UI作成 (カードスタイル)
             const div = document.createElement('div');
             div.className = 'upload-item';
             div.id = `item-${queueId}`;
             div.innerHTML = `
-                <div class="upload-item-img">
-                    <img src="${URL.createObjectURL(file)}">
-                    <div class="upload-status processing" id="status-${queueId}">解析中...</div>
+                <div class="upload-item-header">
+                   <div id="status-${queueId}" class="upload-status processing">解析中...</div>
+                   <button class="btn-remove-item" onclick="removeUploadItem('${queueId}')">
+                     <span class="material-symbols-outlined">delete</span>
+                   </button>
                 </div>
-                <div class="upload-item-details">
-                    <div class="upload-item-full">
-                        <label>曲名</label>
-                        <input type="text" id="title-${queueId}" style="width:100%; box-sizing:border-box;">
+                <div class="upload-item-body">
+                    <div class="upload-item-img">
+                        <img src="${URL.createObjectURL(file)}">
                     </div>
-                    <div>
-                        <label>レベル</label>
-                        <input type="number" id="level-${queueId}" style="width:100%; box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label>難易度</label>
-                        <select id="diff-${queueId}" style="width:100%; box-sizing:border-box;">
-                            <option value="A">Append</option>
-                            <option value="M">Master</option>
-                            <option value="E">Expert</option>
-                            <option value="H">Hard</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>ミス数</label>
-                        <input type="number" id="miss-${queueId}" min="0" style="width:100%; box-sizing:border-box;">
+                    <div class="upload-item-fields">
+                        <div>
+                            <input type="text" id="title-${queueId}" placeholder="曲名" style="width:100%; box-sizing:border-box; font-size:0.9rem;">
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <input type="number" id="level-${queueId}" placeholder="Lv" style="width:50px; box-sizing:border-box;">
+                            <select id="diff-${queueId}" style="flex:1;">
+                                <option value="A">Append</option>
+                                <option value="M">Master</option>
+                                <option value="E">Expert</option>
+                                <option value="H">Hard</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <label style="font-size:0.8rem; margin:0;">Miss:</label>
+                            <input type="number" id="miss-${queueId}" min="0" style="flex:1; box-sizing:border-box;">
+                        </div>
                     </div>
                 </div>
             `;
             listContainer.appendChild(div);
 
             // 解析実行
-            const result = await analyzeImage(file, worker);
+            const result = await analyzeImageFile(file, worker);
             
             // 結果反映
             if (result) {
@@ -787,10 +843,9 @@
                 document.getElementById(`level-${queueId}`).value = result.level;
                 document.getElementById(`diff-${queueId}`).value = result.diff;
                 document.getElementById(`miss-${queueId}`).value = result.miss;
-                document.getElementById(`status-${queueId}`).innerText = "解析完了";
+                document.getElementById(`status-${queueId}`).innerText = "OK";
                 document.getElementById(`status-${queueId}`).className = "upload-status done";
 
-                // 難易度変更時のレベル自動更新イベント
                 const diffSelect = document.getElementById(`diff-${queueId}`);
                 diffSelect.onchange = function() {
                     if (result.musicId) {
@@ -813,9 +868,25 @@
 
         await worker.terminate();
         statusMsg.innerText = "解析が完了しました。内容を確認・修正してアップロードしてください。";
-        execBtn.disabled = false;
-        execBtn.innerText = "全てアップロード";
-      });
+        checkUploadButton();
+      }
+
+      function removeUploadItem(queueId) {
+        const el = document.getElementById(`item-${queueId}`);
+        if(el) el.remove();
+        uploadQueue = uploadQueue.filter(q => q.id !== queueId);
+        checkUploadButton();
+      }
+
+      function checkUploadButton() {
+        const btn = document.getElementById('btn-exec-upload');
+        btn.disabled = uploadQueue.length === 0;
+        if(uploadQueue.length > 0) {
+            btn.innerText = `全てアップロード (${uploadQueue.length}件)`;
+        } else {
+            btn.innerText = "全てアップロード";
+        }
+      }
 
       async function handleBatchUpload() {
         if (uploadQueue.length === 0) return;
@@ -831,20 +902,28 @@
             const rootFolder = await findOrCreateFolder("プロセカリザルト");
             const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
 
-            for (const item of uploadQueue) {
-                const title = document.getElementById(`title-${item.id}`).value.trim();
+            // キューのコピーを作成してループ（削除されてもいいように）
+            const currentQueue = [...uploadQueue];
+
+            for (const item of currentQueue) {
+                // DOMが存在するか確認（削除済みならスキップ）
+                const titleEl = document.getElementById(`title-${item.id}`);
+                if (!titleEl) continue;
+
+                const title = titleEl.value.trim();
                 const level = document.getElementById(`level-${item.id}`).value.trim();
                 const diff = document.getElementById(`diff-${item.id}`).value;
                 const miss = document.getElementById(`miss-${item.id}`).value;
                 const statusLabel = document.getElementById(`status-${item.id}`);
 
                 if (!title || !level || !miss) {
-                    statusLabel.innerText = "未入力項目あり";
+                    statusLabel.innerText = "未入力";
                     statusLabel.className = "upload-status error";
                     continue;
                 }
 
                 statusLabel.innerText = "送信中...";
+                statusLabel.className = "upload-status processing";
                 
                 try {
                     const songFolderName = `${level}${diff} ${title}`;
@@ -867,8 +946,8 @@
 
                     if (!response.ok) throw new Error(response.statusText);
                     
-                    statusLabel.innerText = "完了";
-                    statusLabel.className = "upload-status done";
+                    // 成功したらリストから削除
+                    removeUploadItem(item.id);
                     successCount++;
 
                 } catch (e) {
@@ -878,15 +957,19 @@
                 }
             }
 
-            alert(`${uploadQueue.length}件中 ${successCount}件のアップロードが完了しました！`);
-            closeUploadModal();
-            await fetchDataFromDrive();
+            if (uploadQueue.length === 0) {
+                alert(`アップロード完了 (${successCount}件)`);
+                closeUploadModal();
+                await fetchDataFromDrive();
+            } else {
+                alert(`${successCount}件 成功しました。残りのエラー項目を確認してください。`);
+            }
 
         } catch (e) {
             console.error(e);
             alert("全体処理中にエラーが発生しました: " + e.message);
         } finally {
-            btn.disabled = false;
+            checkUploadButton();
         }
       }
 
@@ -903,10 +986,48 @@
         document.getElementById('edit-level').value = record.level;
         document.getElementById('edit-diff').value = record.difficultyRaw;
         document.getElementById('edit-miss').value = record.missCount;
+        
+        // プレビュー用画像（高画質URLを使用）
+        const previewUrl = record.thumbnail ? record.thumbnail.replace('=s220', '=w1600') : '';
+        const imgEl = document.getElementById('edit-preview-img');
+        imgEl.src = previewUrl;
+        imgEl.crossOrigin = "anonymous"; // canvas汚染対策
       }
 
       function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
+        document.getElementById('edit-preview-img').src = "";
+      }
+
+      async function runEditAnalysis() {
+          const imgEl = document.getElementById('edit-preview-img');
+          if (!imgEl.src) return;
+
+          const btn = document.querySelector('.btn-analyze');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<span class="material-symbols-outlined">hourglass_top</span> 解析中...`;
+          btn.disabled = true;
+
+          try {
+              const worker = await Tesseract.createWorker(['jpn', 'eng']);
+              const result = await analyzeLoadedImage(imgEl, worker);
+              await worker.terminate();
+
+              if (result) {
+                  document.getElementById('edit-title').value = result.title;
+                  document.getElementById('edit-level').value = result.level;
+                  document.getElementById('edit-diff').value = result.diff;
+                  document.getElementById('edit-miss').value = result.miss;
+              } else {
+                  alert("解析に失敗しました");
+              }
+          } catch (e) {
+              console.error(e);
+              alert("解析エラー: " + e.message);
+          } finally {
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+          }
       }
 
       async function handleEditSave() {
