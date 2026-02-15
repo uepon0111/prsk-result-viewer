@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>プロセカ リザルト管理 (Batch Edit)</title>
+    <title>プロセカ リザルト管理</title>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
@@ -21,13 +21,14 @@
         --sidebar-width: 200px;
         --active-color: #e8f0fe;
         --border-color: #ddd;
+        --selected-border: #007bff;
       }
-      body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+      body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; padding-bottom: 80px; }
       .container { max-width: 1200px; margin: 0 auto; }
       h2 { display: flex; align-items: center; gap: 10px; color: #444; }
       .material-symbols-outlined { font-size: 1.2rem; vertical-align: sub; }
       
-      /* 認証ボタン周り */
+      /* Auth Buttons */
       .auth-section { text-align: right; margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
       .btn-auth {
         background-color: #4285f4; color: white; border: none; padding: 10px 20px;
@@ -35,16 +36,11 @@
       }
       .btn-auth:hover { background-color: #357ae8; }
       .btn-signout { background-color: #dc3545; }
-      .btn-signout:hover { background-color: #c82333; }
       .btn-upload { background-color: #28a745; }
-      .btn-upload:hover { background-color: #218838; }
-      .btn-batch-edit { background-color: #fd7e14; display: none; } /* 初期非表示 */
-      .btn-batch-edit:hover { background-color: #e36d0d; }
-
       #auth-status { margin-right: 10px; align-self: center; font-size: 0.9rem; color: #666; }
 
       /* Controls */
-      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
+      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; align-items: end;}
       .control-group { display: flex; flex-direction: column; }
       .control-group label { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
       select, input[type="number"], input[type="text"], input[type="file"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; background-color: #fafafa; }
@@ -52,31 +48,28 @@
       .checkbox-wrapper { display: flex; align-items: center; gap: 8px; height: 42px; background-color: #fafafa; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; }
       input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--diff-master); }
       .checkbox-label { font-size: 0.9rem; cursor: pointer; user-select: none; }
-
+      
+      /* New Inputs for Range */
       .range-inputs { display: flex; align-items: center; gap: 5px; }
       .range-inputs input { width: 100%; text-align: center; }
 
-      .status-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; font-size: 0.9rem; color: #666; font-weight: bold; }
+      .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9rem; color: #666; font-weight: bold; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
       
       /* Card */
-      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; }
+      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; cursor: pointer; }
       .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
       .card.is-fc { border-color: var(--fc-color); }
-      .card.selected { border-color: #fd7e14; background-color: #fff9f2; transform: scale(0.98); } /* 選択時 */
-
-      .card-select-overlay { position: absolute; top: 10px; left: 10px; z-index: 20; transform: scale(1.2); }
       
-      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; cursor: zoom-in; display: flex; justify-content: center; align-items: center; }
+      /* Selection Mode Styles */
+      .card.selected { border-color: var(--selected-border); background-color: #f0f7ff; transform: scale(0.98); }
+      .card.selected::after { content: "check_circle"; font-family: 'Material Symbols Outlined'; position: absolute; top: 10px; right: 10px; font-size: 24px; color: var(--selected-border); z-index: 20; background: white; border-radius: 50%; }
+
+      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; }
       .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
       .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
       
       .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
-      
-      .card-actions { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 5px; z-index: 10; }
-      .action-btn { background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
-      .action-btn:hover { background: rgba(0,0,0,0.8); }
-      .btn-del:hover { background: #dc3545; }
       
       .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
@@ -99,14 +92,12 @@
       .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
       .modal-content-img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
       
-      /* Generic Modal Form Container */
+      /* Generic Batch/Edit Modal */
       .modal-form-content { background-color: #fff; border-radius: 12px; width: 95%; max-width: 1000px; height: 85vh; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; position: relative;}
       .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: #fff;}
       
-      /* Split View Layout (Sidebar + Main) */
+      /* Split View Layout */
       .split-container { display: flex; flex: 1; overflow: hidden; }
-      
-      /* Sidebar */
       .sidebar { width: 250px; border-right: 1px solid #eee; overflow-y: auto; background-color: #f8f9fa; display: flex; flex-direction: column; flex-shrink: 0; }
       .sidebar-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.2s; position: relative;}
       .sidebar-item:hover { background-color: #eee; }
@@ -118,19 +109,15 @@
       .btn-remove-side { border: none; background: none; color: #999; cursor: pointer; padding: 5px; }
       .btn-remove-side:hover { color: #dc3545; }
 
-      /* Main Content Area */
       .main-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-      
-      /* Layout within Main Area (Preview + Form) */
       .editor-layout { display: flex; flex-wrap: wrap; gap: 20px; height: 100%; }
       .preview-pane { flex: 1; min-width: 300px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; position: relative; max-height: 500px; }
       .preview-pane img { max-width: 100%; max-height: 100%; object-fit: contain; }
-      .form-pane { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 15px; }
+      .form-pane { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 15px; position: relative; }
 
       .form-group { margin-bottom: 5px; }
       .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color:#555; }
       
-      /* Breakdown Inputs */
       .breakdown-group { display: flex; gap: 10px; background: #f0f2f5; padding: 10px; border-radius: 8px; }
       .breakdown-item { flex: 1; text-align: center; }
       .breakdown-item label { font-size: 0.75rem; margin-bottom: 2px; display: block; }
@@ -141,10 +128,11 @@
       .btn-cancel { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
       .btn-submit { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
       .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
-      .btn-analyze { position: absolute; bottom: 10px; right: 10px; background-color: rgba(0,123,255,0.9); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; z-index: 5;}
-      .btn-analyze:hover { transform: scale(1.05); }
+      
+      .btn-reanalyze { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin-bottom: 10px;}
+      .btn-reanalyze:hover { background-color: #0056b3; }
 
-      /* Upload Specific: Drop Zone */
+      /* Drop Zone */
       .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; color: #777; transition: all 0.2s; cursor: pointer; background-color: #fcfcfc; margin: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;}
       .drop-zone:hover, .drop-zone.dragover { border-color: #007bff; background-color: #f0f7ff; color: #007bff; }
       
@@ -153,6 +141,13 @@
       .upload-status.done { background-color: #d4edda; color: #155724; }
       .upload-status.error { background-color: #f8d7da; color: #721c24; }
       .upload-status.pending { background-color: #eee; color: #777; }
+
+      /* Batch Selection Bar */
+      #batch-actions { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 15px 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: none; justify-content: center; gap: 15px; z-index: 900; box-sizing: border-box; }
+      .btn-batch { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; color: white; }
+      .btn-batch.delete { background-color: #dc3545; }
+      .btn-batch.edit { background-color: #007bff; }
+      .btn-batch.analyze { background-color: #17a2b8; }
 
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
@@ -165,11 +160,11 @@
       <img class="modal-content-img" id="modalImg">
     </div>
 
-    <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
+    <div id="batchModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
       <div class="modal-form-content">
         <div class="modal-header">
-          <span id="modal-title-text"><span class="material-symbols-outlined">cloud_upload</span> 画像アップロード・編集</span>
-          <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
+          <span id="batch-modal-title"><span class="material-symbols-outlined">cloud_upload</span> 画像アップロード・編集</span>
+          <span style="cursor:pointer;" onclick="closeBatchModal()">&times;</span>
         </div>
         
         <div id="upload-initial" style="display: flex; flex: 1;">
@@ -181,30 +176,31 @@
             </div>
         </div>
 
-        <div id="upload-workspace" class="split-container" style="display: none;">
-            <div class="sidebar" id="upload-sidebar-list"></div>
+        <div id="batch-workspace" class="split-container" style="display: none;">
+            <div class="sidebar" id="batch-sidebar-list"></div>
             
             <div class="main-area">
-                <div id="upload-editor-container" class="editor-layout" style="display: none;">
+                <div id="batch-editor-container" class="editor-layout" style="display: none;">
                     <div class="preview-pane">
-                        <img id="upload-preview-img" src="" crossorigin="anonymous">
-                        <button class="btn-analyze" onclick="runCurrentItemAnalysis()">
-                            <span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span> 画像を再解析
-                        </button>
+                        <img id="batch-preview-img" src="" crossorigin="anonymous">
                     </div>
                     <div class="form-pane">
+                        <button type="button" class="btn-reanalyze" onclick="reanalyzeCurrentItem()">
+                            <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> 解析をやり直す
+                        </button>
+
                         <div class="form-group">
                             <label>曲名</label>
-                            <input type="text" id="up-title" style="width: 100%; box-sizing: border-box;" oninput="updateCurrentUploadItem('title', this.value)">
+                            <input type="text" id="up-title" style="width: 100%; box-sizing: border-box;" oninput="updateCurrentItem('title', this.value)">
                         </div>
                         <div style="display:flex; gap:10px;">
                             <div class="form-group" style="flex:1;">
                                 <label>レベル</label>
-                                <input type="number" id="up-level" style="width: 100%; box-sizing: border-box;" oninput="updateCurrentUploadItem('level', this.value)">
+                                <input type="number" id="up-level" style="width: 100%; box-sizing: border-box;" oninput="updateCurrentItem('level', this.value)">
                             </div>
                             <div class="form-group" style="flex:1;">
                                 <label>難易度</label>
-                                <select id="up-diff" style="width: 100%; box-sizing: border-box;" onchange="updateCurrentUploadItem('diff', this.value)">
+                                <select id="up-diff" style="width: 100%; box-sizing: border-box;" onchange="updateCurrentItem('diff', this.value)">
                                     <option value="A">Append</option>
                                     <option value="M">Master</option>
                                     <option value="E">Expert</option>
@@ -214,19 +210,19 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>判定内訳 (変更すると総数が更新されます)</label>
+                            <label>判定内訳</label>
                             <div class="breakdown-group">
                                 <div class="breakdown-item">
                                     <label style="color:#28a745;">GOOD</label>
-                                    <input type="number" id="up-good" min="0" value="0" oninput="updateCurrentUploadItem('good', this.value)">
+                                    <input type="number" id="up-good" min="0" value="0" oninput="updateCurrentItem('good', this.value)">
                                 </div>
                                 <div class="breakdown-item">
                                     <label style="color:#dc3545;">BAD</label>
-                                    <input type="number" id="up-bad" min="0" value="0" oninput="updateCurrentUploadItem('bad', this.value)">
+                                    <input type="number" id="up-bad" min="0" value="0" oninput="updateCurrentItem('bad', this.value)">
                                 </div>
                                 <div class="breakdown-item">
                                     <label style="color:#6c757d;">MISS</label>
-                                    <input type="number" id="up-miss-detail" min="0" value="0" oninput="updateCurrentUploadItem('missDetail', this.value)">
+                                    <input type="number" id="up-miss-detail" min="0" value="0" oninput="updateCurrentItem('missDetail', this.value)">
                                 </div>
                             </div>
                             <div class="total-score">
@@ -235,19 +231,19 @@
                         </div>
                     </div>
                 </div>
-                <div id="upload-empty-msg" style="margin:auto; color:#999; text-align:center;">
-                    左のリストから選択してください
+                <div id="batch-empty-msg" style="margin:auto; color:#999; text-align:center;">
+                    左のリストから画像を選択してください
                 </div>
             </div>
         </div>
 
-        <div class="modal-header" style="font-size: 0.9rem; padding: 10px 20px; background: #f8f9fa; border-top: 1px solid #eee; border-bottom: none; display:block;" id="upload-msg-area">
-             <span id="upload-status-msg">待機中...</span>
+        <div class="modal-header" style="font-size: 0.9rem; padding: 10px 20px; background: #f8f9fa; border-top: 1px solid #eee; border-bottom: none; display:block;" id="batch-msg-area">
+             <span id="batch-status-msg">待機中...</span>
         </div>
 
         <div class="form-actions">
-          <button class="btn-cancel" onclick="closeUploadModal()">閉じる</button>
-          <button class="btn-submit" id="btn-exec-upload" onclick="handleBatchExecution()" disabled>実行</button>
+          <button class="btn-cancel" onclick="closeBatchModal()">閉じる</button>
+          <button class="btn-submit" id="btn-exec-batch" onclick="handleBatchExecution()" disabled>実行</button>
         </div>
       </div>
     </div>
@@ -256,11 +252,7 @@
       <div class="auth-section">
         <span id="auth-status">未ログイン</span>
         
-        <button id="batch_edit_button" class="btn-auth btn-batch-edit" onclick="startBatchEditMode()">
-             <span class="material-symbols-outlined">edit_square</span> 一括編集 (<span id="selected-count">0</span>)
-        </button>
-
-        <button id="upload_button" class="btn-auth btn-upload" onclick="openUploadModal('upload')" style="display: none;">
+        <button id="upload_button" class="btn-auth btn-upload" onclick="openBatchModal('upload')" style="display: none;">
           <span class="material-symbols-outlined">add_photo_alternate</span> アップロード
         </button>
 
@@ -297,11 +289,11 @@
         </div>
         
         <div class="control-group">
-          <label><span class="material-symbols-outlined">remove_circle</span> 失点数 (Min - Max)</label>
+          <label><span class="material-symbols-outlined">remove_circle</span> 失点数 (範囲)</label>
           <div class="range-inputs">
-             <input type="number" id="filter-miss-min" placeholder="0" oninput="updateView()">
-             <span>~</span>
-             <input type="number" id="filter-miss-max" placeholder="∞" oninput="updateView()">
+            <input type="number" id="filter-miss-min" placeholder="0" min="0" oninput="updateView()">
+            <span>~</span>
+            <input type="number" id="filter-miss-max" placeholder="Max" min="0" oninput="updateView()">
           </div>
         </div>
 
@@ -327,11 +319,10 @@
         </div>
 
         <div class="control-group">
-          <label><span class="material-symbols-outlined">star</span> 表示オプション</label>
-          <div class="checkbox-wrapper">
-            <input type="checkbox" id="filter-best" onchange="updateView()">
-            <label for="filter-best" class="checkbox-label">自己ベストのみ</label>
-          </div>
+            <label><span class="material-symbols-outlined">check_box</span> モード切替</label>
+            <button id="btn-select-mode" onclick="toggleSelectMode()" style="width:100%; padding: 10px; background:white; border:1px solid #ccc; border-radius:8px; cursor:pointer;">
+                選択モード: <span id="mode-text">OFF</span>
+            </button>
         </div>
       </div>
 
@@ -347,14 +338,23 @@
       <div id="grid" class="grid"></div>
     </div>
 
+    <div id="batch-actions">
+        <button class="btn-batch delete" onclick="batchDelete()"><span class="material-symbols-outlined">delete</span> 削除</button>
+        <button class="btn-batch edit" onclick="batchEdit()"><span class="material-symbols-outlined">edit</span> 編集</button>
+        <button class="btn-batch analyze" onclick="batchReanalyze()"><span class="material-symbols-outlined">analytics</span> 再解析</button>
+        <div style="margin-left:auto; display:flex; align-items:center; color:#666;">
+            <span id="selected-count">0</span> 件選択中
+        </div>
+    </div>
+
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
     <script>
-      // ↓↓↓ GCP設定 ↓↓↓
+      // ↓↓↓ GCP Settings ↓↓↓
       const CLIENT_ID = '966636096862-8hrrm5heb4g5r469veoels7u6ifjguuk.apps.googleusercontent.com';
       const API_KEY = 'AIzaSyC-m1rkHuJTmNK2k-s89bJFshvXCS5MZZ0';
-      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+      // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
       
       const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
       const SCOPES = 'https://www.googleapis.com/auth/drive';
@@ -362,11 +362,15 @@
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
-      let allRecords = []; // {id, title, level, ...}
-      let selectedIds = new Set();
+      let allRecords = []; // All drive records
+      let filteredRecords = []; // Currently visible records
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
 
-      // DB
+      // Selection Mode State
+      let isSelectMode = false;
+      let selectedIds = new Set();
+
+      // Database
       let dbMusics = [];
       let dbDiffs = [];
       
@@ -378,25 +382,13 @@
           ]);
           dbMusics = await musicsResp.json();
           dbDiffs = await diffsResp.json();
-          console.log("DB Loaded:", dbMusics.length, dbDiffs.length);
-        } catch (e) {
-          console.error("DB Load Error:", e);
-        }
+        } catch (e) { console.error("DB Error", e); }
       };
 
       // --- Auth ---
-
       function gapiLoaded() { gapi.load('client', initializeGapiClient); }
-      async function initializeGapiClient() {
-        await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
-        gapiInited = true;
-      }
-      function gisLoaded() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID, scope: SCOPES, callback: '', 
-        });
-        gisInited = true;
-      }
+      async function initializeGapiClient() { await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] }); gapiInited = true; }
+      function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '', }); gisInited = true; }
 
       function handleAuthClick() {
         tokenClient.callback = async (resp) => {
@@ -418,7 +410,7 @@
           document.getElementById('grid').innerHTML = '';
           allRecords = [];
           selectedIds.clear();
-          updateBatchButton();
+          updateSelectionUI();
         }
       }
 
@@ -429,34 +421,21 @@
         document.getElementById('auth-status').innerText = isLoggedIn ? 'ログイン済み' : '未ログイン';
       }
 
-      // --- Drive Read Logic ---
-
+      // --- Data Fetching ---
       async function fetchDataFromDrive() {
         const loader = document.getElementById('loader');
         loader.style.display = 'flex';
         document.getElementById('result-count').innerText = 'データ取得中...';
-        document.getElementById('loader-text').innerText = 'データを検索中...';
         
-        selectedIds.clear();
-        updateBatchButton();
-
         try {
           const ROOT_FOLDER_NAME = "プロセカリザルト";
-          const SOURCE_PATH = ["FC"];
-
           const rootFolder = await getFolderByName(ROOT_FOLDER_NAME);
           if (!rootFolder) { allRecords = []; onDataLoaded(); return; }
-
-          let currentFolder = rootFolder;
-          for (const name of SOURCE_PATH) {
-             const found = await getFolderByName(name, currentFolder.id);
-             if (!found) { allRecords = []; onDataLoaded(); return; }
-             currentFolder = found;
-          }
-          const sourceFolderId = currentFolder.id;
+          const fcFolder = await getFolderByName("FC", rootFolder.id);
+          if (!fcFolder) { allRecords = []; onDataLoaded(); return; }
 
           document.getElementById('loader-text').innerText = '楽曲情報を取得中...';
-          const folderQuery = `'${sourceFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+          const folderQuery = `'${fcFolder.id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
           const songFolders = await fetchAllDriveItems(folderQuery, "id, name");
           
           const folderMap = new Map();
@@ -475,32 +454,27 @@
           candidateFiles.forEach(file => {
             if (!file.parents || file.parents.length === 0) return;
             const parentId = file.parents.find(p => folderMap.has(p));
-            
             if (parentId) {
               const songInfo = folderMap.get(parentId);
               const missCount = parseScore(file.name);
-              if (missCount !== null) {
-                records.push({
-                  id: file.id,
-                  parentId: parentId,
-                  title: songInfo.title,
-                  level: songInfo.level,
-                  difficulty: songInfo.difficulty,
-                  difficultyRaw: songInfo.rawDiff,
-                  missCount: missCount,
-                  isFC: (missCount === 0),
-                  thumbnail: file.thumbnailLink || null
-                });
-              }
+              records.push({
+                id: file.id,
+                parentId: parentId,
+                title: songInfo.title,
+                level: songInfo.level,
+                difficulty: songInfo.difficulty,
+                difficultyRaw: songInfo.rawDiff,
+                missCount: missCount,
+                isFC: (missCount === 0),
+                thumbnail: file.thumbnailLink || null
+              });
             }
           });
 
           allRecords = records;
           onDataLoaded();
-
         } catch (e) {
           console.error(e);
-          alert("エラー: " + e.message);
           loader.style.display = 'none';
         }
       }
@@ -517,7 +491,6 @@
         } while (pageToken);
         return items;
       }
-
       async function getFolderByName(name, parentId = null) {
         let query = `mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
         if (parentId) query += ` and '${parentId}' in parents`;
@@ -525,29 +498,295 @@
         return (response.result.files && response.result.files.length > 0) ? response.result.files[0] : null;
       }
 
-      async function findOrCreateFolder(name, parentId = null) {
-        const existing = await getFolderByName(name, parentId);
-        if (existing) return existing;
-        const metadata = { 'name': name, 'mimeType': 'application/vnd.google-apps.folder' };
-        if (parentId) metadata.parents = [parentId];
-        const response = await gapi.client.drive.files.create({ resource: metadata, fields: 'id, name' });
-        return response.result;
+      // --- Unified Batch/Upload Modal Logic ---
+
+      let editorQueue = []; // { id, file(blob/file), imgUrl, data:{}, status, originalId(optional) }
+      let activeItemId = null;
+      let currentMode = 'upload'; // 'upload' or 'edit'
+
+      function openBatchModal(mode) {
+        currentMode = mode;
+        const modal = document.getElementById('batchModal');
+        modal.style.display = 'flex';
+        
+        // Reset state
+        editorQueue = [];
+        activeItemId = null;
+        document.getElementById('batch-sidebar-list').innerHTML = "";
+        document.getElementById('batch-editor-container').style.display = 'none';
+        document.getElementById('batch-empty-msg').style.display = 'block';
+        document.getElementById('batch-status-msg').innerText = "待機中...";
+        document.getElementById('btn-exec-batch').disabled = true;
+
+        if (mode === 'upload') {
+            document.getElementById('batch-modal-title').innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> 画像アップロード';
+            document.getElementById('upload-initial').style.display = 'flex';
+            document.getElementById('batch-workspace').style.display = 'none';
+            document.getElementById('up-file').value = "";
+            document.getElementById('btn-exec-batch').innerText = "全てアップロード";
+        } else {
+            document.getElementById('batch-modal-title').innerHTML = '<span class="material-symbols-outlined">edit_square</span> 一括編集モード';
+            document.getElementById('upload-initial').style.display = 'none';
+            document.getElementById('batch-workspace').style.display = 'flex';
+            document.getElementById('btn-exec-batch').innerText = "保存して反映";
+            // Edit mode specific init is handled by caller (batchEdit)
+        }
       }
 
-      async function deleteFile(fileId) {
-        await gapi.client.drive.files.delete({ fileId: fileId });
+      function closeBatchModal() {
+        document.getElementById('batchModal').style.display = 'none';
       }
 
-      async function moveAndRenameFile(fileId, newName, newParentId, oldParentId) {
-          const params = { fileId: fileId, resource: { name: newName } };
-          if (newParentId !== oldParentId) {
-              params.addParents = newParentId;
-              params.removeParents = oldParentId;
+      // Drop Zone & File Handling (Upload Mode)
+      const dropZone = document.getElementById('drop-zone');
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+      dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files); });
+      document.getElementById('up-file').addEventListener('change', (e) => handleFiles(e.target.files));
+
+      async function handleFiles(files) {
+        if (files.length === 0) return;
+        document.getElementById('upload-initial').style.display = 'none';
+        document.getElementById('batch-workspace').style.display = 'flex';
+        document.getElementById('batch-status-msg').innerText = "画像を処理中...";
+        
+        // Add to queue
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const qId = "new_" + Date.now() + "_" + i;
+            editorQueue.push({
+                id: qId,
+                file: file, // File Object
+                imgUrl: URL.createObjectURL(file),
+                status: 'pending',
+                data: { title:'', level:'', diff:'M', good:0, bad:0, missDetail:0, totalMiss:0, musicId:null },
+                originalId: null
+            });
+            renderSidebarItem(qId);
+        }
+        
+        // Auto Analyze new items
+        await runBatchAnalysis(editorQueue.filter(i => i.status === 'pending'));
+        
+        if (!activeItemId && editorQueue.length > 0) selectItem(editorQueue[0].id);
+        checkBatchButton();
+      }
+
+      // Initialize Batch Edit from Selection
+      async function batchEdit() {
+          if (selectedIds.size === 0) return;
+          openBatchModal('edit');
+          
+          const targets = allRecords.filter(r => selectedIds.has(r.id));
+          document.getElementById('batch-status-msg').innerText = "編集データを準備中...";
+
+          for (const rec of targets) {
+              const qId = "edit_" + rec.id;
+              // Use high-res thumbnail for preview/ocr
+              const highResUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
+              
+              editorQueue.push({
+                  id: qId,
+                  file: null, // No file object for existing items
+                  imgUrl: highResUrl,
+                  status: 'existing', // Mark as already existing
+                  data: { 
+                      title: rec.title, 
+                      level: rec.level, 
+                      diff: rec.difficultyRaw, 
+                      good: 0, bad: 0, missDetail: 0, // Breakdown unknown for existing
+                      totalMiss: rec.missCount,
+                      musicId: null 
+                  },
+                  originalId: rec.id,
+                  originalParent: rec.parentId
+              });
+              renderSidebarItem(qId);
           }
-          await gapi.client.drive.files.update(params);
+          if (editorQueue.length > 0) selectItem(editorQueue[0].id);
+          checkBatchButton();
+          document.getElementById('batch-status-msg').innerText = "編集準備完了";
+      }
+      
+      // Initialize Batch Re-analyze from Selection
+      async function batchReanalyze() {
+          if (selectedIds.size === 0) return;
+          // Open in Edit mode but immediately trigger analysis
+          await batchEdit();
+          // Filter all items and run analysis
+          document.getElementById('batch-status-msg').innerText = "一括再解析を開始します...";
+          await runBatchAnalysis(editorQueue);
+          document.getElementById('batch-status-msg').innerText = "再解析完了";
       }
 
-      // --- OCR / Analysis Logic (Enhanced) ---
+      function renderSidebarItem(id) {
+        const item = editorQueue.find(q => q.id === id);
+        const div = document.createElement('div');
+        div.className = 'sidebar-item';
+        div.id = `sb-${id}`;
+        div.onclick = () => selectItem(id);
+        
+        let thumbUrl = item.imgUrl;
+        if (currentMode === 'edit' && item.originalId) {
+             // Use smaller thumb for sidebar if available in original record to save bandwidth? 
+             // Currently item.imgUrl is high res. CSS resizes it.
+        }
+
+        div.innerHTML = `
+            <img src="${thumbUrl}" class="sidebar-thumb" crossorigin="anonymous">
+            <div class="sidebar-info">
+                <div class="sidebar-title" id="sb-title-${id}">${item.data.title || "名称未設定"}</div>
+                <div class="sidebar-status">
+                    <span id="sb-status-${id}" class="upload-status ${item.status === 'existing' ? 'done' : item.status}">${item.status === 'existing' ? 'EXIST' : item.status}</span>
+                    <button class="btn-remove-side" onclick="removeBatchItem(event, '${id}')">
+                        <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('batch-sidebar-list').appendChild(div);
+      }
+
+      function selectItem(id) {
+        activeItemId = id;
+        const item = editorQueue.find(q => q.id === id);
+        if(!item) return;
+
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        const sbEl = document.getElementById(`sb-${id}`);
+        if(sbEl) sbEl.classList.add('active');
+
+        document.getElementById('batch-editor-container').style.display = 'flex';
+        document.getElementById('batch-empty-msg').style.display = 'none';
+
+        const imgEl = document.getElementById('batch-preview-img');
+        imgEl.src = item.imgUrl;
+        
+        document.getElementById('up-title').value = item.data.title;
+        document.getElementById('up-level').value = item.data.level;
+        document.getElementById('up-diff').value = item.data.diff;
+        
+        document.getElementById('up-good').value = item.data.good;
+        document.getElementById('up-bad').value = item.data.bad;
+        document.getElementById('up-miss-detail').value = item.data.missDetail;
+        document.getElementById('up-total-miss').innerText = item.data.totalMiss;
+      }
+
+      function updateCurrentItem(field, value) {
+        if(!activeItemId) return;
+        const item = editorQueue.find(q => q.id === activeItemId);
+        if(!item) return;
+
+        if(['good', 'bad', 'missDetail', 'level'].includes(field)) {
+             item.data[field] = parseInt(value) || 0;
+        } else {
+             item.data[field] = value;
+        }
+
+        if(field === 'diff' && item.data.musicId) {
+             const map = {'A':'append', 'M':'master', 'E':'expert', 'H':'hard'};
+             const newLvl = getLevelFromDb(item.data.musicId, map[value]);
+             if(newLvl) { item.data.level = newLvl; document.getElementById('up-level').value = newLvl; }
+        }
+
+        if(['good', 'bad', 'missDetail'].includes(field)) {
+            item.data.totalMiss = item.data.good + item.data.bad + item.data.missDetail;
+            document.getElementById('up-total-miss').innerText = item.data.totalMiss;
+        }
+
+        if(field === 'title') {
+            document.getElementById(`sb-title-${activeItemId}`).innerText = value || "名称未設定";
+        }
+        item.status = 'done'; // Modified manually = ready
+        updateSidebarStatus(activeItemId);
+      }
+
+      function updateSidebarStatus(id) {
+          const item = editorQueue.find(q => q.id === id);
+          if(!item) return;
+          const statusEl = document.getElementById(`sb-status-${id}`);
+          statusEl.innerText = "OK"; 
+          statusEl.className = "upload-status done";
+      }
+
+      function removeBatchItem(e, id) {
+        e.stopPropagation();
+        editorQueue = editorQueue.filter(q => q.id !== id);
+        document.getElementById(`sb-${id}`).remove();
+        if (activeItemId === id) {
+            document.getElementById('batch-editor-container').style.display = 'none';
+            document.getElementById('batch-empty-msg').style.display = 'block';
+            activeItemId = null;
+        }
+        checkBatchButton();
+      }
+
+      function checkBatchButton() {
+        const btn = document.getElementById('btn-exec-batch');
+        btn.disabled = editorQueue.length === 0;
+        const label = currentMode === 'upload' ? '全てアップロード' : '保存して反映';
+        btn.innerText = editorQueue.length > 0 ? `${label} (${editorQueue.length}件)` : label;
+      }
+
+      // --- Analysis Logic ---
+      
+      async function runBatchAnalysis(itemsToAnalyze) {
+          if(itemsToAnalyze.length === 0) return;
+          const statusMsg = document.getElementById('batch-status-msg');
+          statusMsg.innerText = "解析中... (しばらくお待ちください)";
+          
+          const worker = await Tesseract.createWorker(['jpn', 'eng']);
+          
+          for (const item of itemsToAnalyze) {
+              const el = document.getElementById(`sb-status-${item.id}`);
+              if(el) { el.innerText = "解析中"; el.className = "upload-status processing"; }
+              
+              // If image is on drive, we need to handle it carefully. 
+              // imgUrl is a blob (upload) or a google content URL (edit).
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.src = item.imgUrl;
+              try {
+                  await new Promise((resolve, reject) => {
+                      img.onload = resolve;
+                      img.onerror = reject;
+                  });
+                  
+                  const res = await analyzeLoadedImage(img, worker);
+                  if (res) {
+                    item.data = {
+                        title: res.title, level: res.level, diff: res.diff,
+                        good: res.missDetail.good, bad: res.missDetail.bad, missDetail: res.missDetail.miss,
+                        totalMiss: res.miss, musicId: res.musicId
+                    };
+                    item.status = 'done';
+                  } else {
+                    item.status = 'error';
+                  }
+              } catch (e) {
+                  console.error("Analysis Failed for " + item.id, e);
+                  item.status = 'error';
+              }
+              
+              updateSidebarStatus(item.id); // Or error update
+              if (item.status === 'done') {
+                 document.getElementById(`sb-title-${item.id}`).innerText = item.data.title;
+                 // If currently selected, refresh form
+                 if (activeItemId === item.id) selectItem(item.id);
+              } else {
+                 const statEl = document.getElementById(`sb-status-${item.id}`);
+                 if(statEl) { statEl.innerText = "ERR"; statEl.className = "upload-status error"; }
+              }
+          }
+          await worker.terminate();
+          statusMsg.innerText = "処理完了";
+      }
+
+      async function reanalyzeCurrentItem() {
+          if (!activeItemId) return;
+          const item = editorQueue.find(q => q.id === activeItemId);
+          if (item) await runBatchAnalysis([item]);
+      }
 
       async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'filter-standard') {
         const canvas = document.createElement('canvas');
@@ -576,48 +815,6 @@
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       }
 
-      function normalizeString(str) {
-        if (!str) return "";
-        return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-            .toLowerCase().replace(/[\s\-_]/g, '');
-      }
-
-      function findBestMatchMusic(ocrText) {
-        if (!dbMusics || dbMusics.length === 0) return null;
-        const target = normalizeString(ocrText);
-        if (target.length === 0) return null;
-        let bestMatch = null, minScore = Infinity;
-        // Levenshtein (simple implementation)
-        const levenshtein = (s1, s2) => {
-            if(s1.length > s2.length) [s1,s2] = [s2,s1];
-            let dist = Array.from({length: s1.length+1},(_,i)=>i);
-            for(let i2=0;i2<s2.length;i2++){
-                let newDist = [i2+1];
-                for(let i1=0;i1<s1.length;i1++){
-                    if(s1[i1]===s2[i2]) newDist.push(dist[i1]);
-                    else newDist.push(1+Math.min(dist[i1], dist[i1+1], newDist[newDist.length-1]));
-                }
-                dist = newDist;
-            }
-            return dist[dist.length-1];
-        };
-
-        for (const music of dbMusics) {
-            const dbTitleNorm = normalizeString(music.title);
-            const dist = levenshtein(target, dbTitleNorm);
-            const score = dist / Math.max(target.length, dbTitleNorm.length);
-            if (score < minScore) { minScore = score; bestMatch = music; }
-        }
-        return bestMatch; 
-      }
-
-      function getLevelFromDb(musicId, diffKey) {
-          if (!musicId || !diffKey || !dbDiffs) return null;
-          const entry = dbDiffs.find(d => d.musicId === musicId && d.musicDifficulty === diffKey);
-          return entry ? entry.playLevel : null;
-      }
-
-      // Main Analysis Function
       async function analyzeLoadedImage(imgElement, worker) {
          try {
             // Diff
@@ -641,18 +838,12 @@
             let level = "";
             if (musicId) level = getLevelFromDb(musicId, dKey) || "";
 
-            // Miss Breakdown
+            // Miss
             const missBlob = await cropImage(imgElement, 0.10, 0.55, 0.20, 0.28, 'filter-standard');
             const missRet = await worker.recognize(missBlob, { lang: 'jpn' });
             const lines = missRet.data.text.split('\n');
             let cGood = 0, cBad = 0, cMiss = 0;
-            const parseLine = (line, regex) => {
-                if (regex.test(line)) {
-                    const nums = line.match(/\d+/g);
-                    if (nums) return parseInt(nums[nums.length - 1], 10);
-                }
-                return 0;
-            };
+            const parseLine = (line, regex) => { if (regex.test(line)) { const nums = line.match(/\d+/g); if (nums) return parseInt(nums[nums.length - 1], 10); } return 0; };
             lines.forEach(line => {
               if (/G[O0QD]{2}D/i.test(line)) cGood = parseLine(line, /G[O0QD]{2}D/i);
               if (/BAD/i.test(line))  cBad  = parseLine(line, /BAD/i);
@@ -660,9 +851,7 @@
             });
 
             return {
-                title: finalTitle,
-                level: level,
-                diff: dCode,
+                title: finalTitle, level: level, diff: dCode,
                 miss: cGood + cBad + cMiss,
                 missDetail: { good: cGood, bad: cBad, miss: cMiss },
                 musicId: musicId
@@ -670,326 +859,65 @@
         } catch (e) { console.error(e); return null; }
       }
 
-      // --- Universal Editor (Upload & Batch Edit) ---
-
-      let queue = []; // { id, file(opt), isExisting(bool), originalData(opt), imgUrl, data: {...}, status }
-      let activeItemId = null;
-      let appMode = 'upload'; // 'upload' or 'edit'
-
-      // Mode Switching
-      function openUploadModal(mode) {
-        appMode = mode;
-        const modal = document.getElementById('uploadModal');
-        modal.style.display = 'flex';
-        
-        // Reset Logic
-        queue = [];
-        activeItemId = null;
-        document.getElementById('upload-sidebar-list').innerHTML = "";
-        document.getElementById('upload-editor-container').style.display = 'none';
-        document.getElementById('upload-status-msg').innerText = "待機中...";
-        document.getElementById('btn-exec-upload').disabled = true;
-
-        if (mode === 'upload') {
-            document.getElementById('modal-title-text').innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> 画像アップロード';
-            document.getElementById('upload-initial').style.display = 'flex';
-            document.getElementById('upload-workspace').style.display = 'none';
-            document.getElementById('upload-empty-msg').style.display = 'block';
-            document.getElementById('up-file').value = ""; // clear file input
-            document.getElementById('btn-exec-upload').innerText = "全てアップロード";
-        } else {
-            document.getElementById('modal-title-text').innerHTML = '<span class="material-symbols-outlined">edit_square</span> 一括編集モード';
-            document.getElementById('upload-initial').style.display = 'none';
-            document.getElementById('upload-workspace').style.display = 'flex'; // show workspace immediately
-            document.getElementById('upload-empty-msg').style.display = 'block';
-            document.getElementById('btn-exec-upload').innerText = "一括保存・反映";
-        }
-      }
-
-      function closeUploadModal() {
-        document.getElementById('uploadModal').style.display = 'none';
-        queue = [];
-      }
-
-      // 1. Upload Flow: File Selection
-      const dropZone = document.getElementById('drop-zone');
-      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-      dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-      dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files); });
-      document.getElementById('up-file').addEventListener('change', (e) => handleFiles(e.target.files));
-
-      async function handleFiles(files) {
-        if (files.length === 0) return;
-        document.getElementById('upload-initial').style.display = 'none';
-        document.getElementById('upload-workspace').style.display = 'flex';
-
-        // Add to Queue
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const qId = "new_" + Date.now() + "_" + i;
-            queue.push({
-                id: qId,
-                file: file,
-                isExisting: false,
-                imgUrl: URL.createObjectURL(file),
-                status: 'pending',
-                data: { title:'', level:'', diff:'M', good:0, bad:0, missDetail:0, totalMiss:0, musicId:null }
-            });
-            renderSidebarItem(qId);
-        }
-        
-        // Auto select first if needed
-        if (!activeItemId && queue.length > 0) selectQueueItem(queue[0].id);
-
-        // Run Analysis for pending items
-        await runQueueAnalysis();
-      }
-
-      // 2. Batch Edit Flow: Start
-      function startBatchEditMode() {
-          if (selectedIds.size === 0) return;
-          openUploadModal('edit');
-
-          // Convert selection to Queue
-          const ids = Array.from(selectedIds);
-          ids.forEach(id => {
-              const rec = allRecords.find(r => r.id === id);
-              if(rec) {
-                  const qId = rec.id; // Use existing ID
-                  const largeUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
-                  queue.push({
-                      id: qId,
-                      isExisting: true,
-                      originalData: rec,
-                      imgUrl: largeUrl,
-                      status: 'done', // initially assume loaded, but can be re-analyzed
-                      data: {
-                          title: rec.title,
-                          level: rec.level,
-                          diff: rec.difficultyRaw,
-                          good: 0, bad: 0, missDetail: 0, // Breakdown unknown in Drive metadata, init 0
-                          totalMiss: rec.missCount,
-                          musicId: null
-                      }
-                  });
-                  renderSidebarItem(qId);
-              }
-          });
-
-          if (queue.length > 0) selectQueueItem(queue[0].id);
-          checkUploadButton();
-      }
-
-      // --- Analysis Runner (Common) ---
-
-      async function runQueueAnalysis() {
-        const statusMsg = document.getElementById('upload-status-msg');
-        statusMsg.innerText = "画像を解析中... (そのままお待ちください)";
-        
-        const worker = await Tesseract.createWorker(['jpn', 'eng']);
-        
-        for (const item of queue) {
-            if(item.status !== 'pending') continue;
-            await processItemAnalysis(item, worker);
-            updateSidebarStatus(item.id);
-        }
-        await worker.terminate();
-        statusMsg.innerText = "処理完了。内容を確認してください。";
-        checkUploadButton();
-      }
-
-      // Re-analyze specific item button logic
-      async function runCurrentItemAnalysis() {
-          if (!activeItemId) return;
-          const item = queue.find(q => q.id === activeItemId);
-          if (!item) return;
-
-          const btn = document.querySelector('#uploadModal .btn-analyze');
-          const originalText = btn.innerHTML;
-          btn.innerHTML = `<span class="material-symbols-outlined">hourglass_top</span> 解析中...`;
-          btn.disabled = true;
-
-          try {
-             const worker = await Tesseract.createWorker(['jpn', 'eng']);
-             await processItemAnalysis(item, worker);
-             await worker.terminate();
-             
-             // Reflect changes in UI
-             selectQueueItem(item.id); // Reload form
-             updateSidebarStatus(item.id);
-             document.getElementById('upload-status-msg').innerText = "再解析完了";
-          } catch(e) {
-              alert("解析エラー: " + e);
-          } finally {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
-          }
-      }
-
-      async function processItemAnalysis(item, worker) {
-          try {
-            // Create a temp image for analysis if not visible
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.src = item.imgUrl;
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-            });
-            
-            const res = await analyzeLoadedImage(img, worker);
-            if (res) {
-                item.data = {
-                    title: res.title,
-                    level: res.level,
-                    diff: res.diff,
-                    good: res.missDetail.good,
-                    bad: res.missDetail.bad,
-                    missDetail: res.missDetail.miss,
-                    totalMiss: res.miss,
-                    musicId: res.musicId
-                };
-                item.status = 'done';
-            } else {
-                item.status = 'error';
+      function normalizeString(str) { if (!str) return ""; return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).toLowerCase().replace(/[\s\-_]/g, ''); }
+      function findBestMatchMusic(ocrText) {
+        if (!dbMusics || dbMusics.length === 0) return null;
+        const target = normalizeString(ocrText);
+        if (target.length === 0) return null;
+        let bestMatch = null, minScore = Infinity;
+        const levenshtein = (s1, s2) => {
+            if(s1.length > s2.length) [s1,s2] = [s2,s1];
+            let dist = Array.from({length: s1.length+1},(_,i)=>i);
+            for(let i2=0;i2<s2.length;i2++){
+                let newDist = [i2+1];
+                for(let i1=0;i1<s1.length;i1++){
+                    if(s1[i1]===s2[i2]) newDist.push(dist[i1]);
+                    else newDist.push(1+Math.min(dist[i1], dist[i1+1], newDist[newDist.length-1]));
+                }
+                dist = newDist;
             }
-          } catch (e) {
-              console.error(e);
-              item.status = 'error';
-          }
-      }
-
-
-      // --- Queue & UI Management ---
-
-      function renderSidebarItem(id) {
-        const item = queue.find(q => q.id === id);
-        const div = document.createElement('div');
-        div.className = 'sidebar-item';
-        div.id = `sb-${id}`;
-        div.onclick = () => selectQueueItem(id);
-        div.innerHTML = `
-            <img src="${item.imgUrl}" class="sidebar-thumb" crossorigin="anonymous">
-            <div class="sidebar-info">
-                <div class="sidebar-title" id="sb-title-${id}">${item.data.title || '解析待ち...'}</div>
-                <div class="sidebar-status">
-                    <span id="sb-status-${id}" class="upload-status ${item.status}">${item.status==='pending'?'Wait':(item.status==='done'?'OK':'ERR')}</span>
-                    <button class="btn-remove-side" onclick="removeQueueItem(event, '${id}')">
-                        <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
-                    </button>
-                </div>
-            </div>
-        `;
-        document.getElementById('upload-sidebar-list').appendChild(div);
-      }
-
-      function updateSidebarStatus(id) {
-        const item = queue.find(q => q.id === id);
-        if(!item) return;
-        const titleEl = document.getElementById(`sb-title-${id}`);
-        const statusEl = document.getElementById(`sb-status-${id}`);
-        
-        titleEl.innerText = item.data.title || "タイトル不明";
-        if (item.status === 'done') { statusEl.innerText = "OK"; statusEl.className = "upload-status done"; }
-        else if (item.status === 'error') { statusEl.innerText = "ERR"; statusEl.className = "upload-status error"; }
-      }
-
-      function selectQueueItem(id) {
-        activeItemId = id;
-        const item = queue.find(q => q.id === id);
-        if(!item) return;
-
-        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-        const sbEl = document.getElementById(`sb-${id}`);
-        if(sbEl) sbEl.classList.add('active');
-
-        document.getElementById('upload-editor-container').style.display = 'flex';
-        document.getElementById('upload-empty-msg').style.display = 'none';
-
-        document.getElementById('upload-preview-img').src = item.imgUrl;
-        document.getElementById('up-title').value = item.data.title;
-        document.getElementById('up-level').value = item.data.level;
-        document.getElementById('up-diff').value = item.data.diff;
-        
-        document.getElementById('up-good').value = item.data.good;
-        document.getElementById('up-bad').value = item.data.bad;
-        document.getElementById('up-miss-detail').value = item.data.missDetail;
-        document.getElementById('up-total-miss').innerText = item.data.totalMiss;
-      }
-
-      function updateCurrentUploadItem(field, value) {
-        if(!activeItemId) return;
-        const item = queue.find(q => q.id === activeItemId);
-        if(!item) return;
-
-        if(field === 'good' || field === 'bad' || field === 'missDetail' || field === 'level') {
-             item.data[field] = parseInt(value) || 0;
-        } else {
-             item.data[field] = value;
+            return dist[dist.length-1];
+        };
+        for (const music of dbMusics) {
+            const dbTitleNorm = normalizeString(music.title);
+            const dist = levenshtein(target, dbTitleNorm);
+            const score = dist / Math.max(target.length, dbTitleNorm.length);
+            if (score < minScore) { minScore = score; bestMatch = music; }
         }
-        
-        // Auto Level Logic
-        if (field === 'diff' && item.data.musicId) {
-             const map = {'A':'append', 'M':'master', 'E':'expert', 'H':'hard'};
-             const newLvl = getLevelFromDb(item.data.musicId, map[value]);
-             if(newLvl) { item.data.level = newLvl; document.getElementById('up-level').value = newLvl; }
-        }
-
-        // Total Logic
-        if(field === 'good' || field === 'bad' || field === 'missDetail') {
-            item.data.totalMiss = item.data.good + item.data.bad + item.data.missDetail;
-            document.getElementById('up-total-miss').innerText = item.data.totalMiss;
-        }
-
-        if(field === 'title') {
-            document.getElementById(`sb-title-${activeItemId}`).innerText = value || "名称未設定";
-        }
+        return bestMatch; 
       }
+      function getLevelFromDb(musicId, diffKey) { if (!musicId || !diffKey || !dbDiffs) return null; const entry = dbDiffs.find(d => d.musicId === musicId && d.musicDifficulty === diffKey); return entry ? entry.playLevel : null; }
 
-      function removeQueueItem(e, id) {
-        e.stopPropagation();
-        queue = queue.filter(q => q.id !== id);
-        const el = document.getElementById(`sb-${id}`);
-        if(el) el.remove();
-        
-        if (activeItemId === id) {
-            document.getElementById('upload-editor-container').style.display = 'none';
-            document.getElementById('upload-empty-msg').style.display = 'block';
-            activeItemId = null;
-        }
-        checkUploadButton();
-      }
-
-      function checkUploadButton() {
-        const btn = document.getElementById('btn-exec-upload');
-        btn.disabled = queue.length === 0;
-        if(appMode === 'upload') btn.innerText = queue.length > 0 ? `全てアップロード (${queue.length}件)` : "全てアップロード";
-        else btn.innerText = queue.length > 0 ? `一括保存して反映 (${queue.length}件)` : "一括保存して反映";
-      }
-
-      // --- EXECUTION (Save / Upload) ---
+      // --- Execution Logic (Save/Upload) ---
 
       async function handleBatchExecution() {
-          if (queue.length === 0) return;
-          const btn = document.getElementById('btn-exec-upload');
+          const btn = document.getElementById('btn-exec-batch');
           btn.disabled = true;
+          btn.innerText = "処理中...";
           
-          if (appMode === 'upload') {
-              await executeUpload(btn);
+          if (currentMode === 'upload') {
+              await executeUploads();
           } else {
-              await executeBatchUpdate(btn);
+              await executeEdits();
           }
       }
 
-      // Upload Implementation
-      async function executeUpload(btn) {
-        btn.innerText = "アップロード中...";
+      async function findOrCreateFolder(name, parentId = null) {
+        const existing = await getFolderByName(name, parentId);
+        if (existing) return existing;
+        const metadata = { 'name': name, 'mimeType': 'application/vnd.google-apps.folder' };
+        if (parentId) metadata.parents = [parentId];
+        const response = await gapi.client.drive.files.create({ resource: metadata, fields: 'id, name' });
+        return response.result;
+      }
+
+      async function executeUploads() {
         let successCount = 0;
         const accessToken = gapi.client.getToken().access_token;
         const rootFolder = await findOrCreateFolder("プロセカリザルト");
         const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
 
-        for (const item of [...queue]) {
+        for (const item of [...editorQueue]) {
             const sbStatus = document.getElementById(`sb-status-${item.id}`);
             if(sbStatus) { sbStatus.innerText = "送信中"; sbStatus.className = "upload-status processing"; }
             
@@ -1009,9 +937,11 @@
                     method: 'POST', headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }), body: form
                 });
                 if (!res.ok) throw new Error(res.statusText);
-
-                removeQueueItem({stopPropagation:()=>{}}, item.id);
+                
+                editorQueue = editorQueue.filter(q => q.id !== item.id);
+                document.getElementById(`sb-${item.id}`).remove();
                 successCount++;
+
             } catch (e) {
                 console.error(e);
                 if(sbStatus) { sbStatus.innerText = "失敗"; sbStatus.className = "upload-status error"; }
@@ -1020,119 +950,152 @@
         finishExecution(successCount, "アップロード");
       }
 
-      // Batch Update Implementation
-      async function executeBatchUpdate(btn) {
-        btn.innerText = "更新中...";
-        let successCount = 0;
-        const rootFolder = await findOrCreateFolder("プロセカリザルト");
-        const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
+      async function executeEdits() {
+          let successCount = 0;
+          const rootFolder = await findOrCreateFolder("プロセカリザルト");
+          const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
 
-        for (const item of [...queue]) {
-            const sbStatus = document.getElementById(`sb-status-${item.id}`);
-            if(sbStatus) { sbStatus.innerText = "更新中"; sbStatus.className = "upload-status processing"; }
+          for (const item of [...editorQueue]) {
+             const sbStatus = document.getElementById(`sb-status-${item.id}`);
+             if(sbStatus) { sbStatus.innerText = "保存中"; sbStatus.className = "upload-status processing"; }
 
-            try {
-                const newTitle = item.data.title.trim();
-                const newLevel = item.data.level;
-                const newDiff = item.data.diff;
-                const newMiss = item.data.totalMiss;
+             try {
+                if(!item.data.title || !item.data.level) throw new Error("必須項目不足");
 
-                if (!newTitle || !newLevel) throw new Error("必須項目不足");
-
-                // Target Folder Logic
-                const newFolderName = `${newLevel}${newDiff} ${newTitle}`;
+                // Check if move/rename needed
+                const newFolderName = `${item.data.level}${item.data.diff} ${item.data.title}`;
+                const newFileName = (item.data.totalMiss === 0) ? "FC" : `FC-${item.data.totalMiss}`;
+                
+                // Get target folder
                 const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
-                const newFileName = (newMiss === 0) ? "FC" : `FC-${newMiss}`;
-                
-                // Move/Rename
-                await moveAndRenameFile(item.id, newFileName, targetFolder.id, item.originalData.parentId);
-                
-                removeQueueItem({stopPropagation:()=>{}}, item.id);
+
+                // Update Drive File
+                const params = { fileId: item.originalId, resource: { name: newFileName } };
+                if (targetFolder.id !== item.originalParent) {
+                    params.addParents = targetFolder.id;
+                    params.removeParents = item.originalParent;
+                }
+                await gapi.client.drive.files.update(params);
+
+                editorQueue = editorQueue.filter(q => q.id !== item.id);
+                document.getElementById(`sb-${item.id}`).remove();
                 successCount++;
-
-            } catch (e) {
-                console.error(e);
-                if(sbStatus) { sbStatus.innerText = "失敗"; sbStatus.className = "upload-status error"; }
-            }
-        }
-        finishExecution(successCount, "更新");
+             } catch (e) {
+                 console.error(e);
+                 if(sbStatus) { sbStatus.innerText = "失敗"; sbStatus.className = "upload-status error"; }
+             }
+          }
+          finishExecution(successCount, "更新");
       }
 
-      async function finishExecution(count, type) {
-          if (queue.length === 0) {
-            alert(`${type}完了 (${count}件)`);
-            closeUploadModal();
-            await fetchDataFromDrive();
+      function finishExecution(count, actionName) {
+         if (editorQueue.length === 0) {
+            alert(`${actionName}完了 (${count}件)`);
+            closeBatchModal();
+            selectedIds.clear(); // Clear selection after edit
+            updateSelectionUI();
+            fetchDataFromDrive();
         } else {
-            alert(`${count}件 成功。エラー分を確認してください。`);
-            checkUploadButton();
+            alert(`${count}件 ${actionName}成功。エラー分を確認してください。`);
+            checkBatchButton();
         }
       }
 
-      // --- Deletion / Helpers / UI Render (Existing) ---
+      // --- Selection Mode Logic ---
       
-      async function confirmDelete(fileId, title) {
-        event.stopPropagation();
-        if (confirm(`「${title}」を削除しますか？`)) {
+      function toggleSelectMode() {
+          isSelectMode = !isSelectMode;
+          const btn = document.getElementById('btn-select-mode');
+          const txt = document.getElementById('mode-text');
+          if (isSelectMode) {
+              btn.style.backgroundColor = "#e8f0fe";
+              btn.style.borderColor = "#007bff";
+              btn.style.color = "#007bff";
+              txt.innerText = "ON";
+          } else {
+              btn.style.backgroundColor = "white";
+              btn.style.borderColor = "#ccc";
+              btn.style.color = "inherit";
+              txt.innerText = "OFF";
+              selectedIds.clear();
+              updateSelectionUI();
+          }
+          renderGrid(filteredRecords);
+      }
+
+      function toggleSelection(id) {
+          if (selectedIds.has(id)) selectedIds.delete(id);
+          else selectedIds.add(id);
+          
+          // Re-render specific card to toggle class
+          const card = document.getElementById(`card-${id}`);
+          if (card) {
+              if (selectedIds.has(id)) card.classList.add('selected');
+              else card.classList.remove('selected');
+          }
+          updateSelectionUI();
+      }
+
+      function updateSelectionUI() {
+          const bar = document.getElementById('batch-actions');
+          const countSpan = document.getElementById('selected-count');
+          countSpan.innerText = selectedIds.size;
+          if (selectedIds.size > 0) {
+              bar.style.display = 'flex';
+          } else {
+              bar.style.display = 'none';
+          }
+      }
+
+      async function batchDelete() {
+          if (!confirm(`選択した ${selectedIds.size} 件を削除しますか？`)) return;
           const loader = document.getElementById('loader');
           loader.style.display = 'flex';
-          document.getElementById('grid').innerHTML = ''; 
+          document.getElementById('grid').innerHTML = '';
+          
           try {
-            await deleteFile(fileId);
-            await fetchDataFromDrive();
-          } catch (e) { alert("削除失敗: " + e.message); loader.style.display = 'none'; }
-        }
+              for (const id of selectedIds) {
+                  await gapi.client.drive.files.delete({ fileId: id });
+              }
+              alert("削除しました");
+              selectedIds.clear();
+              updateSelectionUI();
+              await fetchDataFromDrive();
+          } catch (e) {
+              alert("削除エラー: " + e.message);
+              fetchDataFromDrive(); // Refresh anyway
+          }
       }
 
-      function parseFolderTitle(folderName) {
-        const regex = /^(\d+)([AMEH])\s+(.+)$/;
-        const match = folderName.match(regex);
-        if (!match) return null;
-        const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' };
-        return {
-          level: parseInt(match[1], 10),
-          rawDiff: match[2],
-          difficulty: diffMap[match[2]] || match[2],
-          title: match[3]
-        };
-      }
-
-      function parseScore(fileName) {
-        const match = fileName.match(/^FC(?:-(\d+))?/);
-        return match ? (match[1] === undefined ? 0 : parseInt(match[1], 10)) : null;
-      }
-
-      function onDataLoaded() { document.getElementById('loader').style.display = 'none'; updateView(); }
-
+      // --- Standard UI Helper ---
+      
       function updateView() {
         if (!allRecords) return;
         const fcF = document.getElementById('filter-fc').value;
-        const dfF = document.getElementById('filter-diff').value;
-        const lvF = document.getElementById('filter-level').value;
-        const bestOnly = document.getElementById('filter-best').checked;
-        const tiF = document.getElementById('filter-title').value.trim().toLowerCase();
-        
-        // New Min-Max Logic
+        // Miss Filter (Range)
         const msMin = document.getElementById('filter-miss-min').value;
         const msMax = document.getElementById('filter-miss-max').value;
+        
+        const dfF = document.getElementById('filter-diff').value;
+        const lvF = document.getElementById('filter-level').value;
+        const tiF = document.getElementById('filter-title').value.trim().toLowerCase();
 
         let list = allRecords;
-        if (bestOnly) {
-          const map = new Map();
-          list.forEach(r => {
-            const k = r.title + '_' + r.difficultyRaw;
-            if (!map.has(k) || r.missCount < map.get(k).missCount) map.set(k, r);
-          });
-          list = Array.from(map.values());
-        }
 
         list = list.filter(r => {
           if (fcF === 'fc' && !r.isFC) return false;
           if (fcF === 'unfc' && r.isFC) return false;
           
-          // Min-Max Filter
-          if (msMin !== "" && r.missCount < parseInt(msMin)) return false;
-          if (msMax !== "" && r.missCount > parseInt(msMax)) return false;
+          // Range check
+          if (!r.isFC) { // Only check range for non-FC (or treat FC as 0)
+              const mVal = r.missCount;
+              if (msMin !== "" && mVal < parseInt(msMin)) return false;
+              if (msMax !== "" && mVal > parseInt(msMax)) return false;
+          } else {
+              // FC is 0 miss.
+              if (msMin !== "" && 0 < parseInt(msMin)) return false;
+              // if Max is 0 or more, FC is included.
+          }
 
           if (dfF !== 'all' && r.difficultyRaw !== dfF) return false;
           if (lvF && r.level != lvF) return false;
@@ -1154,31 +1117,9 @@
           if(sOrder === 'miss_asc') return mAsc || lDiff || dDiff;
           return mDesc || lDiff || dDiff;
         });
-
+        
+        filteredRecords = list;
         renderGrid(list);
-      }
-
-      // --- Batch Selection Logic ---
-      function toggleSelect(id) {
-          if (selectedIds.has(id)) selectedIds.delete(id);
-          else selectedIds.add(id);
-          
-          updateBatchButton();
-          
-          // Toggle Visual
-          const card = document.getElementById(`card-${id}`);
-          if (card) {
-              if (selectedIds.has(id)) card.classList.add('selected');
-              else card.classList.remove('selected');
-          }
-      }
-
-      function updateBatchButton() {
-          const btn = document.getElementById('batch_edit_button');
-          const countSpan = document.getElementById('selected-count');
-          countSpan.innerText = selectedIds.size;
-          if (selectedIds.size > 0) btn.style.display = 'inline-flex';
-          else btn.style.display = 'none';
       }
 
       function renderGrid(records) {
@@ -1192,18 +1133,14 @@
           let large = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
           const missDisplay = rec.isFC ? `<span class="miss-val zero">FC-0</span>` : `FC -<span class="miss-val">${rec.missCount}</span>`;
           const badge = rec.isFC ? `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
-          
-          const isSelected = selectedIds.has(rec.id);
+          const isSel = selectedIds.has(rec.id) ? 'selected' : '';
+
+          // Onclick logic
+          const clickAction = isSelectMode ? `toggleSelection('${rec.id}')` : `openImageModal('${large}')`;
 
           grid.innerHTML += `
-            <div id="card-${rec.id}" class="card ${rec.isFC?'is-fc':''} ${isSelected?'selected':''}">
-              <div class="card-select-overlay">
-                  <input type="checkbox" ${isSelected?'checked':''} onclick="event.stopPropagation(); toggleSelect('${rec.id}')" style="width:20px; height:20px; cursor:pointer;">
-              </div>
-              <div class="card-img-container" onclick="openImageModal('${large}')">
-                <div class="card-actions">
-                    <button class="action-btn btn-del" onclick="confirmDelete('${rec.id}', '${escapeHtml(rec.title)}')" title="削除"><span class="material-symbols-outlined">delete</span></button>
-                </div>
+            <div class="card ${rec.isFC?'is-fc':''} ${isSel}" id="card-${rec.id}" onclick="${clickAction}">
+              <div class="card-img-container">
                 ${badge}
                 <div class="img-loader-spinner"></div>
                 ${thumb ? `<img src="${thumb}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` : '<span style="color:#aaa;">NO IMAGE</span>'}
@@ -1219,6 +1156,9 @@
 
       function openImageModal(src) { if(src) { document.getElementById('imageModal').style.display="flex"; document.getElementById('modalImg').src=src; } }
       function closeImageModal() { document.getElementById('imageModal').style.display="none"; }
+      function parseFolderTitle(folderName) { const regex = /^(\d+)([AMEH])\s+(.+)$/; const match = folderName.match(regex); if (!match) return null; const diffMap = { 'A': 'Append', 'M': 'Master', 'E': 'Expert', 'H': 'Hard' }; return { level: parseInt(match[1], 10), rawDiff: match[2], difficulty: diffMap[match[2]] || match[2], title: match[3] }; }
+      function parseScore(fileName) { const match = fileName.match(/^FC(?:-(\d+))?/); return match ? (match[1] === undefined ? 0 : parseInt(match[1], 10)) : null; }
+      function onDataLoaded() { document.getElementById('loader').style.display = 'none'; updateView(); }
       function escapeHtml(t) { return t ? t.toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) : ''; }
     </script>
   </body>
