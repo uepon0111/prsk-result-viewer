@@ -26,29 +26,29 @@
       body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; padding-bottom: 80px; }
       .container { max-width: 1200px; margin: 0 auto; }
       h2 { display: flex; align-items: center; gap: 10px; color: #444; }
+      .material-symbols-outlined { font-size: 1.2rem; vertical-align: sub; }
       
-      /* Auth & Header Buttons */
+      /* Auth Buttons & Top Controls */
       .auth-section { text-align: right; margin-bottom: 20px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap;}
       .btn-auth {
-        background-color: #4285f4; color: white; border: none; padding: 8px 16px;
-        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem;
+        background-color: #4285f4; color: white; border: none; padding: 10px 20px;
+        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;
       }
-      .btn-auth:hover { background-color: #357ae8; opacity: 0.9; }
+      .btn-auth:hover { background-color: #357ae8; }
       .btn-signout { background-color: #dc3545; }
       .btn-upload { background-color: #28a745; }
       
-      /* Select Mode Toggle Button (New Location) */
-      .btn-mode-toggle {
-        background-color: #fff; color: #555; border: 1px solid #ccc; padding: 8px 16px;
-        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem;
-        transition: all 0.2s;
+      /* Mode Toggle Button Style */
+      .btn-mode {
+        background-color: white; border: 1px solid #ccc; color: #555; padding: 10px 15px;
+        border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;
       }
-      .btn-mode-toggle.active { background-color: #e8f0fe; color: #007bff; border-color: #007bff; }
+      .btn-mode.active { background-color: #e8f0fe; color: #007bff; border-color: #007bff; }
 
       #auth-status { margin-right: 10px; font-size: 0.9rem; color: #666; }
 
       /* Controls */
-      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end;}
+      .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; align-items: end;}
       .control-group { display: flex; flex-direction: column; }
       .control-group label { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
       select, input[type="number"], input[type="text"], input[type="file"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; background-color: #fafafa; }
@@ -60,7 +60,7 @@
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
       
       /* Card */
-      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; }
+      .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 2px solid transparent; position: relative; cursor: pointer; }
       .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
       .card.is-fc { border-color: var(--fc-color); }
       
@@ -68,27 +68,13 @@
       .card.selected { border-color: var(--selected-border); background-color: #f0f7ff; transform: scale(0.98); }
       .card.selected::after { content: "check_circle"; font-family: 'Material Symbols Outlined'; position: absolute; top: 10px; right: 10px; font-size: 24px; color: var(--selected-border); z-index: 20; background: white; border-radius: 50%; }
 
-      /* Individual Actions (Hover on Image) */
-      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; group: card-hover; }
-      .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; cursor: pointer;}
+      .card-img-container { width: 100%; height: 140px; background-color: #e0e2e5; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; }
+      .card-img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s ease-in; position: relative; z-index: 2; }
       .img-loader-spinner { position: absolute; width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #999; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
       
-      .card-actions-overlay {
-        position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.6); padding: 5px;
-        display: flex; justify-content: flex-end; gap: 8px; opacity: 0; transition: opacity 0.2s; z-index: 10;
-        pointer-events: none; /* Initially allow clicks to pass through to image */
-      }
-      .card:hover .card-actions-overlay { opacity: 1; pointer-events: auto; }
-      .btn-card-action {
-        background: rgba(255,255,255,0.9); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;
-        display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: bold; color: #333;
-      }
-      .btn-card-action:hover { background: #fff; transform: scale(1.05); }
-      .btn-card-action.del:hover { color: #dc3545; }
-
-      .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; pointer-events: none;}
+      .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
       
-      .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; cursor: default; }
+      .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
       .tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; letter-spacing: 0.5px; }
       .tag.lvl { background-color: #555; }
@@ -100,6 +86,12 @@
       .score-info { font-size: 0.9rem; color: #666; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 8px; margin-top: auto; }
       .miss-val { font-weight: bold; }
       .miss-val.zero { color: var(--fc-color); } 
+
+      /* Individual Card Actions (when not in select mode) */
+      .card-actions { display: flex; gap: 5px; margin-left: auto; }
+      .btn-card-icon { border: none; background: none; color: #999; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s;}
+      .btn-card-icon:hover { background-color: #eee; color: #333; }
+      .btn-card-icon.del:hover { background-color: #fee; color: #dc3545; }
       
       #loader { display: none; flex-direction: column; align-items: center; margin-top: 50px; color: #666; }
       .spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top: 4px solid var(--diff-master); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
@@ -115,14 +107,12 @@
       
       /* Split View Layout */
       .split-container { display: flex; flex: 1; overflow: hidden; }
+      .sidebar { width: 250px; border-right: 1px solid #eee; overflow-y: auto; background-color: #f8f9fa; display: flex; flex-direction: column; flex-shrink: 0; }
       
-      /* Sidebar with Toolbar */
-      .sidebar-container { width: 250px; border-right: 1px solid #eee; display: flex; flex-direction: column; flex-shrink: 0; background-color: #f8f9fa; }
-      .sidebar-toolbar { padding: 10px; border-bottom: 1px solid #eee; display: flex; gap: 5px; justify-content: center; background: #fff; }
-      .btn-mini-action { font-size: 0.75rem; padding: 5px 10px; background: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-      .btn-mini-action:hover { background: #e2e6ea; }
+      .sidebar-toolbar { padding: 10px; border-bottom: 1px solid #ddd; background: #fff; display: flex; justify-content: center;}
+      .btn-analyze-all { width: 100%; font-size: 0.8rem; padding: 8px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: bold; }
+      .btn-analyze-all:hover { background: #138496; }
 
-      .sidebar { overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
       .sidebar-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.2s; position: relative;}
       .sidebar-item:hover { background-color: #eee; }
       .sidebar-item.active { background-color: var(--active-color); border-left: 4px solid #007bff; }
@@ -171,6 +161,7 @@
       .btn-batch { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; color: white; }
       .btn-batch.delete { background-color: #dc3545; }
       .btn-batch.edit { background-color: #007bff; }
+      .btn-batch.deselect { background-color: #6c757d; }
 
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
       .close-btn:hover { color: var(--fc-color); }
@@ -200,13 +191,13 @@
         </div>
 
         <div id="batch-workspace" class="split-container" style="display: none;">
-            <div class="sidebar-container">
+            <div class="sidebar">
                 <div class="sidebar-toolbar">
-                    <button class="btn-mini-action" onclick="runBatchAnalysis(editorQueue)">
-                        <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> すべて再解析
+                    <button class="btn-analyze-all" onclick="analyzeAllInBatch()">
+                        <span class="material-symbols-outlined">analytics</span> 一括解析 (すべて)
                     </button>
                 </div>
-                <div class="sidebar" id="batch-sidebar-list"></div>
+                <div id="batch-sidebar-list" style="overflow-y:auto; flex:1;"></div>
             </div>
             
             <div class="main-area">
@@ -216,7 +207,7 @@
                     </div>
                     <div class="form-pane">
                         <button type="button" class="btn-reanalyze" onclick="reanalyzeCurrentItem()">
-                            <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> この画像を解析
+                            <span class="material-symbols-outlined" style="font-size:1rem;">analytics</span> この画像を再解析
                         </button>
 
                         <div class="form-group">
@@ -281,11 +272,11 @@
     <div class="container">
       <div class="auth-section">
         <span id="auth-status">未ログイン</span>
-        
-        <button id="btn-select-mode" class="btn-mode-toggle" onclick="toggleSelectMode()">
+
+        <button id="btn-select-mode" class="btn-mode" onclick="toggleSelectMode()">
             <span class="material-symbols-outlined">check_box</span> 選択モード
         </button>
-
+        
         <button id="upload_button" class="btn-auth btn-upload" onclick="openBatchModal('upload')" style="display: none;">
           <span class="material-symbols-outlined">add_photo_alternate</span> アップロード
         </button>
@@ -366,6 +357,7 @@
     </div>
 
     <div id="batch-actions">
+        <button class="btn-batch deselect" onclick="clearSelection()"><span class="material-symbols-outlined">close</span> 選択解除</button>
         <button class="btn-batch delete" onclick="batchDelete()"><span class="material-symbols-outlined">delete</span> 削除</button>
         <button class="btn-batch edit" onclick="batchEdit()"><span class="material-symbols-outlined">edit_note</span> 編集・解析</button>
         <div style="margin-left:auto; display:flex; align-items:center; color:#666;">
@@ -555,6 +547,7 @@
             document.getElementById('upload-initial').style.display = 'none';
             document.getElementById('batch-workspace').style.display = 'flex';
             document.getElementById('btn-exec-batch').innerText = "保存して反映";
+            // Edit mode specific init is handled by caller (batchEdit)
         }
       }
 
@@ -604,32 +597,22 @@
           
           const targets = allRecords.filter(r => selectedIds.has(r.id));
           document.getElementById('batch-status-msg').innerText = "編集データを準備中...";
-          populateEditQueue(targets);
-      }
-      
-      async function editSingle(id) {
-          const rec = allRecords.find(r => r.id === id);
-          if(!rec) return;
-          openBatchModal('edit');
-          document.getElementById('batch-status-msg').innerText = "データを準備中...";
-          populateEditQueue([rec]);
-      }
 
-      function populateEditQueue(records) {
-          for (const rec of records) {
+          for (const rec of targets) {
               const qId = "edit_" + rec.id;
+              // Use high-res thumbnail for preview/ocr
               const highResUrl = rec.thumbnail ? rec.thumbnail.replace('=s220', '=w1600') : '';
               
               editorQueue.push({
                   id: qId,
-                  file: null, 
+                  file: null, // No file object for existing items
                   imgUrl: highResUrl,
-                  status: 'existing', 
+                  status: 'existing', // Mark as already existing
                   data: { 
                       title: rec.title, 
                       level: rec.level, 
                       diff: rec.difficultyRaw, 
-                      good: 0, bad: 0, missDetail: 0, 
+                      good: 0, bad: 0, missDetail: 0, // Breakdown unknown for existing
                       totalMiss: rec.missCount,
                       musicId: null 
                   },
@@ -640,21 +623,7 @@
           }
           if (editorQueue.length > 0) selectItem(editorQueue[0].id);
           checkBatchButton();
-          document.getElementById('batch-status-msg').innerText = "準備完了";
-      }
-
-      async function deleteSingle(id) {
-          if(!confirm("このリザルトを削除してもよろしいですか？")) return;
-           const loader = document.getElementById('loader');
-          loader.style.display = 'flex';
-          try {
-              await gapi.client.drive.files.delete({ fileId: id });
-              alert("削除しました");
-              await fetchDataFromDrive();
-          } catch (e) {
-              alert("削除エラー: " + e.message);
-              document.getElementById('loader').style.display = 'none';
-          }
+          document.getElementById('batch-status-msg').innerText = "編集準備完了";
       }
 
       function renderSidebarItem(id) {
@@ -765,7 +734,7 @@
       // --- Analysis Logic ---
       
       async function runBatchAnalysis(itemsToAnalyze) {
-          if(!itemsToAnalyze || itemsToAnalyze.length === 0) return;
+          if(itemsToAnalyze.length === 0) return;
           const statusMsg = document.getElementById('batch-status-msg');
           statusMsg.innerText = "解析中... (しばらくお待ちください)";
           
@@ -800,7 +769,7 @@
                   item.status = 'error';
               }
               
-              updateSidebarStatus(item.id); 
+              updateSidebarStatus(item.id);
               if (item.status === 'done') {
                  document.getElementById(`sb-title-${item.id}`).innerText = item.data.title;
                  if (activeItemId === item.id) selectItem(item.id);
@@ -817,6 +786,12 @@
           if (!activeItemId) return;
           const item = editorQueue.find(q => q.id === activeItemId);
           if (item) await runBatchAnalysis([item]);
+      }
+
+      async function analyzeAllInBatch() {
+          if (editorQueue.length === 0) return;
+          if(!confirm("リスト内のすべての画像を解析しますか？")) return;
+          await runBatchAnalysis(editorQueue);
       }
 
       async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'filter-standard') {
@@ -993,14 +968,11 @@
              try {
                 if(!item.data.title || !item.data.level) throw new Error("必須項目不足");
 
-                // Check if move/rename needed
                 const newFolderName = `${item.data.level}${item.data.diff} ${item.data.title}`;
                 const newFileName = (item.data.totalMiss === 0) ? "FC" : `FC-${item.data.totalMiss}`;
                 
-                // Get target folder
                 const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
 
-                // Update Drive File
                 const params = { fileId: item.originalId, resource: { name: newFileName } };
                 if (targetFolder.id !== item.originalParent) {
                     params.addParents = targetFolder.id;
@@ -1023,7 +995,7 @@
          if (editorQueue.length === 0) {
             alert(`${actionName}完了 (${count}件)`);
             closeBatchModal();
-            selectedIds.clear(); // Clear selection after edit
+            selectedIds.clear(); 
             updateSelectionUI();
             fetchDataFromDrive();
         } else {
@@ -1051,7 +1023,6 @@
           if (selectedIds.has(id)) selectedIds.delete(id);
           else selectedIds.add(id);
           
-          // Re-render specific card to toggle class
           const card = document.getElementById(`card-${id}`);
           if (card) {
               if (selectedIds.has(id)) card.classList.add('selected');
@@ -1068,6 +1039,34 @@
               bar.style.display = 'flex';
           } else {
               bar.style.display = 'none';
+          }
+      }
+      
+      function clearSelection() {
+          selectedIds.clear();
+          updateSelectionUI();
+          renderGrid(filteredRecords);
+      }
+
+      // Individual Actions (Non-Select Mode)
+      function individualEdit(id) {
+          selectedIds.clear();
+          selectedIds.add(id);
+          batchEdit();
+      }
+
+      async function individualDelete(id) {
+          if(!confirm("このリザルトを削除しますか？")) return;
+          const loader = document.getElementById('loader');
+          loader.style.display = 'flex';
+          document.getElementById('grid').innerHTML = '';
+          try {
+              await gapi.client.drive.files.delete({ fileId: id });
+              alert("削除しました");
+              await fetchDataFromDrive();
+          } catch(e) {
+              alert("エラー: " + e.message);
+              fetchDataFromDrive();
           }
       }
 
@@ -1087,7 +1086,7 @@
               await fetchDataFromDrive();
           } catch (e) {
               alert("削除エラー: " + e.message);
-              fetchDataFromDrive(); // Refresh anyway
+              fetchDataFromDrive(); 
           }
       }
 
@@ -1098,7 +1097,6 @@
         const fcF = document.getElementById('filter-fc').value;
         const msMin = document.getElementById('filter-miss-min').value;
         const msMax = document.getElementById('filter-miss-max').value;
-        
         const dfF = document.getElementById('filter-diff').value;
         const lvF = document.getElementById('filter-level').value;
         const tiF = document.getElementById('filter-title').value.trim().toLowerCase();
@@ -1108,15 +1106,13 @@
         list = list.filter(r => {
           if (fcF === 'fc' && !r.isFC) return false;
           if (fcF === 'unfc' && r.isFC) return false;
-          
-          if (!r.isFC) { 
+          if (!r.isFC) {
               const mVal = r.missCount;
               if (msMin !== "" && mVal < parseInt(msMin)) return false;
               if (msMax !== "" && mVal > parseInt(msMax)) return false;
           } else {
               if (msMin !== "" && 0 < parseInt(msMin)) return false;
           }
-
           if (dfF !== 'all' && r.difficultyRaw !== dfF) return false;
           if (lvF && r.level != lvF) return false;
           if (tiF && !r.title.toLowerCase().includes(tiF)) return false;
@@ -1155,20 +1151,18 @@
           const badge = rec.isFC ? `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
           const isSel = selectedIds.has(rec.id) ? 'selected' : '';
 
-          // Onclick logic
-          const clickAction = isSelectMode ? `toggleSelection('${rec.id}')` : `openImageModal('${large}')`;
+          // Conditional Actions
+          let clickAction = "";
+          let cardActions = "";
           
-          // Action Buttons (Only visible when NOT in select mode)
-          let actions = '';
-          if (!isSelectMode) {
-              actions = `
-                <div class="card-actions-overlay">
-                    <button class="btn-card-action" onclick="event.stopPropagation(); editSingle('${rec.id}')">
-                        <span class="material-symbols-outlined" style="font-size:1rem;">edit</span> 編集
-                    </button>
-                    <button class="btn-card-action del" onclick="event.stopPropagation(); deleteSingle('${rec.id}')">
-                        <span class="material-symbols-outlined" style="font-size:1rem;">delete</span> 削除
-                    </button>
+          if (isSelectMode) {
+              clickAction = `toggleSelection('${rec.id}')`;
+          } else {
+              clickAction = `openImageModal('${large}')`;
+              cardActions = `
+                <div class="card-actions">
+                    <button class="btn-card-icon" onclick="event.stopPropagation(); individualEdit('${rec.id}')" title="編集"><span class="material-symbols-outlined">edit</span></button>
+                    <button class="btn-card-icon del" onclick="event.stopPropagation(); individualDelete('${rec.id}')" title="削除"><span class="material-symbols-outlined">delete</span></button>
                 </div>
               `;
           }
@@ -1177,14 +1171,13 @@
             <div class="card ${rec.isFC?'is-fc':''} ${isSel}" id="card-${rec.id}" onclick="${clickAction}">
               <div class="card-img-container">
                 ${badge}
-                ${actions}
                 <div class="img-loader-spinner"></div>
                 ${thumb ? `<img src="${thumb}" class="card-img" loading="lazy" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">` : '<span style="color:#aaa;">NO IMAGE</span>'}
               </div>
               <div class="card-body">
                 <div class="song-meta"><span class="tag lvl">Lv.${rec.level}</span><span class="tag diff-${rec.difficultyRaw}">${rec.difficulty}</span></div>
                 <div class="song-title">${escapeHtml(rec.title)}</div>
-                <div class="score-info"><span style="display:flex;align-items:center;gap:2px;"><span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result</span>${missDisplay}</div>
+                <div class="score-info"><span style="display:flex;align-items:center;gap:2px;"><span class="material-symbols-outlined" style="font-size:1rem;">bar_chart</span> Result</span>${cardActions || missDisplay}</div>
               </div>
             </div>`;
         });
