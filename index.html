@@ -709,7 +709,7 @@
             }
 
             // --- 2. 赤枠: 楽曲タイトル ---
-            const rTitle = {x:0.18, y:0.01, w:0.30, h:0.04};
+            const rTitle = {x:0.19, y:0.01, w:0.32, h:0.05};
             drawDebugRect(rTitle, "red");
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
             // タイトルは日本語含む
@@ -746,7 +746,7 @@
             };
 
             // --- 4. 緑枠: ミス数 ---
-            const rMiss = {x:0.02, y:0.60, w:0.25, h:0.35};
+            const rMiss = {x:0.15, y:0.50, w:0.25, h:0.35};
             drawDebugRect(rMiss, "#00ff00");
 
             const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'high-contrast');
