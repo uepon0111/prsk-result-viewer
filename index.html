@@ -60,8 +60,14 @@
       
       /* Badges & Buttons on Card */
       .fc-badge { position: absolute; top: 8px; right: 8px; background: var(--fc-color); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; z-index: 3; }
+      
+      /* Delete Button */
       .delete-btn { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10; transition: background 0.2s; }
       .delete-btn:hover { background: #dc3545; }
+
+      /* Edit Button (New) */
+      .edit-btn { position: absolute; top: 8px; left: 45px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10; transition: background 0.2s; }
+      .edit-btn:hover { background: #007bff; }
       
       .card-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
       .song-meta { display: flex; gap: 6px; margin-bottom: 8px; font-size: 0.75rem; }
@@ -84,7 +90,7 @@
       .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
       .modal-content-img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); object-fit: contain; }
       
-      /* Upload Modal Specific */
+      /* Upload/Edit Modal Specific */
       .modal-form-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto; }
       .modal-header { font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
       .form-group { margin-bottom: 15px; }
@@ -100,11 +106,11 @@
       }
       .preview-wrapper {
         position: relative;
-        display: inline-block; /* 画像のサイズに合わせる */
+        display: inline-block;
         max-width: 100%;
       }
       #preview-img { 
-        display: block; max-width: 100%; max-height: 200px; /* ★高さを制限して小さく表示 */
+        display: block; max-width: 100%; max-height: 200px; 
         height: auto; 
       }
       #debug-overlay {
@@ -118,7 +124,7 @@
         font-weight: bold; 
         margin-bottom: 10px; 
         min-height: 1.2em; 
-        white-space: pre-wrap; /* 改行を有効にする */
+        white-space: pre-wrap;
         line-height: 1.5;
       }
       #ocr-status.error { color: #dc3545; }
@@ -137,13 +143,13 @@
     <div id="uploadModal" class="modal" style="background-color: rgba(0,0,0,0.5);">
       <div class="modal-form-content">
         <div class="modal-header">
-          <span><span class="material-symbols-outlined">cloud_upload</span> リザルトアップロード</span>
+          <span id="modal-title"><span class="material-symbols-outlined">cloud_upload</span> リザルトアップロード</span>
           <span style="cursor:pointer;" onclick="closeUploadModal()">&times;</span>
         </div>
         
         <div id="ocr-status"></div>
 
-        <div class="form-group">
+        <div class="form-group" id="div-file-input">
           <label>画像ファイル</label>
           <input type="file" id="up-file" accept="image/*">
         </div>
@@ -180,7 +186,7 @@
         </div>
         <div class="form-actions">
           <button class="btn-cancel" onclick="closeUploadModal()">キャンセル</button>
-          <button class="btn-submit" id="btn-submit-upload" onclick="handleUpload()">アップロード</button>
+          <button class="btn-submit" id="btn-submit-upload" onclick="handleSubmit()">アップロード</button>
         </div>
       </div>
     </div>
@@ -294,6 +300,11 @@
       let gisInited = false;
       let allRecords = [];
       const diffRank = { 'A': 4, 'M': 3, 'E': 2, 'H': 1 };
+
+      // 編集モード用変数
+      let isEditMode = false;
+      let editingFileId = null;
+      let editingParentId = null;
 
       // --- 楽曲DBデータ ---
       let dbMusics = [];
@@ -449,6 +460,7 @@
               if (missCount !== null) {
                 records.push({
                   id: file.id,
+                  parentId: parentId, // 編集用に親IDを保持
                   title: songInfo.title,
                   level: songInfo.level,
                   difficulty: songInfo.difficulty,
@@ -506,7 +518,7 @@
         return (files && files.length > 0) ? files[0] : null;
       }
 
-      // --- Drive API Helper Functions (Write: Upload/Delete) ---
+      // --- Drive API Helper Functions (Write: Upload/Delete/Update) ---
 
       async function findOrCreateFolder(name, parentId = null) {
         const existing = await getFolderByName(name, parentId);
@@ -532,14 +544,23 @@
         });
       }
 
-      // --- Upload & Preview & OCR Logic ---
+      // --- Upload & Edit & OCR Logic ---
 
       function openUploadModal() {
+        isEditMode = false;
+        editingFileId = null;
+        editingParentId = null;
+        
         document.getElementById('uploadModal').style.display = 'flex';
+        document.getElementById('modal-title').innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> リザルトアップロード';
+        document.getElementById('btn-submit-upload').innerText = 'アップロード';
+        
         // Reset Inputs
         document.getElementById('up-file').value = "";
+        document.getElementById('div-file-input').style.display = "block"; // ファイル入力表示
         document.getElementById('up-title').value = "";
         document.getElementById('up-level').value = "";
+        document.getElementById('up-diff').value = "M"; // default
         document.getElementById('up-miss').value = "0";
         document.getElementById('ocr-status').innerText = "";
         document.getElementById('ocr-status').className = "";
@@ -552,105 +573,95 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
+      function openEditModal(record) {
+        isEditMode = true;
+        editingFileId = record.id;
+        editingParentId = record.parentId;
+
+        document.getElementById('uploadModal').style.display = 'flex';
+        document.getElementById('modal-title').innerHTML = '<span class="material-symbols-outlined">edit</span> 情報編集';
+        document.getElementById('btn-submit-upload').innerText = '保存';
+
+        // 既存データをセット
+        document.getElementById('up-title').value = record.title;
+        document.getElementById('up-level').value = record.level;
+        document.getElementById('up-diff').value = record.difficultyRaw;
+        document.getElementById('up-miss').value = record.missCount;
+
+        // アップロード不要な要素を隠す
+        document.getElementById('div-file-input').style.display = "none";
+        document.getElementById('preview-box').style.display = "none";
+        document.getElementById('ocr-status').innerText = "既存の情報を編集します";
+        document.getElementById('ocr-status').className = "";
+      }
+
       function closeUploadModal() {
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // 画像切り抜き + 前処理
+      // --- OCR関連 (変更なし) ---
+      
       async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'filter-standard') {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
         const h = imageElement.naturalHeight;
         const ctx = canvas.getContext('2d');
         
-        // モードによる処理分岐
         if (type === 'threshold-diff') {
-            // 難易度(APPEND等)用: 画素操作 + 拡大による強調
             const scale = 1.5;
             canvas.width = w * wRatio * scale;
             canvas.height = h * hRatio * scale;
-            
             ctx.drawImage(imageElement, w * xRatio, h * yRatio, w * wRatio, h * hRatio, 0, 0, canvas.width, canvas.height);
-            
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
                 const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-                // 白抜き文字(明るい)を黒、背景(暗め)を白に反転2値化
-                if (gray > 180) {
-                    data[i] = data[i+1] = data[i+2] = 0; 
-                } else {
-                    data[i] = data[i+1] = data[i+2] = 255;
-                }
+                if (gray > 180) { data[i] = data[i+1] = data[i+2] = 0; } else { data[i] = data[i+1] = data[i+2] = 255; }
             }
             ctx.putImageData(imageData, 0, 0);
-
         } else {
-            // タイトル・スコア用: 以前のCSSフィルター方式 (標準サイズ)
             canvas.width = w * wRatio;
             canvas.height = h * hRatio;
-
-            // コンテキスト設定後に描画
             ctx.filter = 'grayscale(100%) contrast(150%)';
             ctx.drawImage(imageElement, w * xRatio, h * yRatio, w * wRatio, h * hRatio, 0, 0, canvas.width, canvas.height);
         }
-        
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       }
 
-      // 文字列正規化（比較用）
       function normalizeString(str) {
         if (!str) return "";
-        return str
-            .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
-                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-            })
-            .toLowerCase()
-            .replace(/[\s\-_]/g, '');
+        return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) { return String.fromCharCode(s.charCodeAt(0) - 0xFEE0); }).toLowerCase().replace(/[\s\-_]/g, '');
       }
 
-      // レーベンシュタイン距離
       function levenshteinDistance(s1, s2) {
         if (s1.length > s2.length) [s1, s2] = [s2, s1];
         let distances = Array.from({ length: s1.length + 1 }, (_, i) => i);
         for (let i2 = 0; i2 < s2.length; i2++) {
             let newDistances = [i2 + 1];
             for (let i1 = 0; i1 < s1.length; i1++) {
-                if (s1[i1] === s2[i2]) {
-                    newDistances.push(distances[i1]);
-                } else {
-                    newDistances.push(1 + Math.min(distances[i1], distances[i1 + 1], newDistances[newDistances.length - 1]));
-                }
+                if (s1[i1] === s2[i2]) { newDistances.push(distances[i1]); } 
+                else { newDistances.push(1 + Math.min(distances[i1], distances[i1 + 1], newDistances[newDistances.length - 1])); }
             }
             distances = newDistances;
         }
         return distances[distances.length - 1];
       }
 
-      // DB内から最も近い曲名を強制的に探す
       function findBestMatchMusic(ocrText) {
         if (!dbMusics || dbMusics.length === 0) return null;
-        
         const target = normalizeString(ocrText);
         if (target.length === 0) return null;
-
         let bestMatch = null;
         let minScore = Infinity; 
-
         for (const music of dbMusics) {
             const dbTitleNorm = normalizeString(music.title);
             const dist = levenshteinDistance(target, dbTitleNorm);
             const score = dist / Math.max(target.length, dbTitleNorm.length);
-            
-            if (score < minScore) {
-                minScore = score;
-                bestMatch = music;
-            }
+            if (score < minScore) { minScore = score; bestMatch = music; }
         }
         return bestMatch; 
       }
 
-      // レベル更新ヘルパー
       function updateLevelFromDb(musicId, diffKey) {
           if (!musicId || !diffKey || !dbDiffs) return;
           const diffEntry = dbDiffs.find(d => d.musicId === musicId && d.musicDifficulty === diffKey);
@@ -658,7 +669,6 @@
               document.getElementById('up-level').value = diffEntry.playLevel;
               console.log("[AutoSet] Level set to:", diffEntry.playLevel);
           } else {
-              console.warn("[AutoSet] Level not found for ID:", musicId, " Diff:", diffKey);
               document.getElementById('up-level').value = "";
           }
       }
@@ -694,22 +704,14 @@
             const drawDebugRect = (r, color) => {
                ctx.strokeStyle = color;
                ctx.lineWidth = Math.max(3, imgForCrop.naturalWidth * 0.005);
-               ctx.strokeRect(
-                 imgForCrop.naturalWidth * r.x, 
-                 imgForCrop.naturalHeight * r.y, 
-                 imgForCrop.naturalWidth * r.w, 
-                 imgForCrop.naturalHeight * r.h
-               );
+               ctx.strokeRect(imgForCrop.naturalWidth * r.x, imgForCrop.naturalHeight * r.y, imgForCrop.naturalWidth * r.w, imgForCrop.naturalHeight * r.h);
             };
 
             const worker = await Tesseract.createWorker(['jpn', 'eng']);
 
-            // --- 1. 青枠: 難易度 ---
             const rDiff = {x:0.20, y:0.07, w:0.10, h:0.04};
             drawDebugRect(rDiff, "blue");
-            // 難易度は新しい方式(threshold-diff)を維持
             const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'threshold-diff');
-            
             const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
             const diffText = diffRet.data.text.toUpperCase();
             console.log("[OCR] Diff:", diffText);
@@ -717,21 +719,15 @@
             let detectedDiffCode = null;
             let detectedDiffKey = null;
 
-            if (diffText.match(/A?P{2}E?N?D?/)) { 
-                detectedDiffCode = "A"; detectedDiffKey = "append"; 
-            }
+            if (diffText.match(/A?P{2}E?N?D?/)) { detectedDiffCode = "A"; detectedDiffKey = "append"; }
             else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
             else if (diffText.includes("EXPERT")) { detectedDiffCode = "E"; detectedDiffKey = "expert"; }
             else if (diffText.includes("HARD")) { detectedDiffCode = "H"; detectedDiffKey = "hard"; }
             
-            if (detectedDiffCode) {
-                document.getElementById('up-diff').value = detectedDiffCode;
-            }
+            if (detectedDiffCode) { document.getElementById('up-diff').value = detectedDiffCode; }
 
-            // --- 2. 赤枠: 楽曲タイトル ---
             const rTitle = {x:0.19, y:0.01, w:0.32, h:0.05};
             drawDebugRect(rTitle, "red");
-            // タイトルは以前の方式に戻す(filter-standard)
             const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'filter-standard');
             const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
             const titleText = titleRet.data.text;
@@ -743,16 +739,11 @@
             if (matchedMusic) {
                 document.getElementById('up-title').value = matchedMusic.title;
                 musicId = matchedMusic.id;
-                console.log("[OCR] Matched:", matchedMusic.title, "ID:", musicId);
             } else {
                 document.getElementById('up-title').value = titleText.replace(/\r?\n/g, '').trim();
-                console.warn("[OCR] No match found in DB");
             }
 
-            // --- 3. レベル自動設定 ---
-            if (musicId && detectedDiffKey) {
-                updateLevelFromDb(musicId, detectedDiffKey);
-            }
+            if (musicId && detectedDiffKey) { updateLevelFromDb(musicId, detectedDiffKey); }
 
             const diffSelect = document.getElementById('up-diff');
             diffSelect.onchange = function() {
@@ -761,20 +752,14 @@
                 if(musicId) updateLevelFromDb(musicId, map[curVal]);
             };
 
-            // --- 4. 緑枠: ミス数 ---
             const rMiss = {x:0.10, y:0.55, w:0.20, h:0.28};
             drawDebugRect(rMiss, "#00ff00");
-
-            // ミス数判定は以前の方式に戻す(filter-standard)
             const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'filter-standard');
-            // 以前の方式に従い jpn モデルで認識 (Turn 3準拠)
             const missRet = await worker.recognize(missBlob, { lang: 'jpn' });
             const missText = missRet.data.text;
             
             const lines = missText.split('\n');
             let countGood = 0, countBad = 0, countMiss = 0;
-            
-            // 以前の解析ロジックに戻す
             const parseLine = (line, regex) => {
                 if (regex.test(line)) {
                     const nums = line.match(/\d+/g);
@@ -782,9 +767,8 @@
                 }
                 return 0;
             };
-
             const regGood = /G[O0QD]{2}D/i; 
-            const regBad  = /BAD/i;
+            const regBad  = /BAD/i; 
             const regMiss = /MISS/i;
 
             lines.forEach(line => {
@@ -798,11 +782,8 @@
 
             await worker.terminate();
 
-            // --- 解析完了メッセージ（改行・フォーマット変更） ---
             const resultTitle = matchedMusic ? matchedMusic.title : 'タイトル不明';
             const resultLevel = document.getElementById('up-level').value;
-            
-            // 改行して略さず表示
             statusDiv.innerText = `解析完了: ${resultTitle} (Lv.${resultLevel})\nGOOD: ${countGood}\nBAD: ${countBad}\nMISS: ${countMiss}`;
             statusDiv.style.color = "#28a745";
 
@@ -817,6 +798,16 @@
         imgForCrop.src = URL.createObjectURL(file);
       });
 
+      // --- 統合ハンドラ (Upload or Save Edit) ---
+      function handleSubmit() {
+        if (isEditMode) {
+          handleSaveEdit();
+        } else {
+          handleUpload();
+        }
+      }
+
+      // --- 新規アップロード処理 ---
       async function handleUpload() {
         const fileInput = document.getElementById('up-file');
         const title = document.getElementById('up-title').value.trim();
@@ -849,7 +840,6 @@
 
           const accessToken = gapi.client.getToken().access_token;
           const form = new FormData();
-          
           form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
           form.append('file', file);
 
@@ -871,6 +861,67 @@
         } finally {
           btn.disabled = false;
           btn.innerText = "アップロード";
+        }
+      }
+
+      // --- 編集保存処理 (Drive側も更新) ---
+      async function handleSaveEdit() {
+        const title = document.getElementById('up-title').value.trim();
+        const level = document.getElementById('up-level').value.trim();
+        const diff = document.getElementById('up-diff').value;
+        const miss = document.getElementById('up-miss').value;
+
+        if (!title || !level || !miss) {
+            alert("すべての項目を入力してください。");
+            return;
+        }
+
+        const btn = document.getElementById('btn-submit-upload');
+        btn.disabled = true;
+        btn.innerText = "保存中...";
+
+        try {
+            // 1. 新しいフォルダ名・ファイル名を決定
+            const newFolderName = `${level}${diff} ${title}`;
+            const newFileName = (parseInt(miss) === 0) ? "FC" : `FC-${miss}`;
+
+            const rootFolder = await findOrCreateFolder("プロセカリザルト");
+            const fcFolder = await findOrCreateFolder("FC", rootFolder.id);
+
+            // 2. 移動先のフォルダを確保
+            const targetFolder = await findOrCreateFolder(newFolderName, fcFolder.id);
+            const targetFolderId = targetFolder.id;
+
+            // 3. Drive API でファイルを更新（名前変更 ＆ 親フォルダ変更）
+            // 親フォルダが現在のフォルダ(editingParentId)と異なる場合のみ move を行う
+            const updateBody = {
+                name: newFileName
+            };
+            const requestParams = {
+                fileId: editingFileId,
+                resource: updateBody
+            };
+
+            if (targetFolderId !== editingParentId) {
+                // 親を変更
+                requestParams.addParents = targetFolderId;
+                requestParams.removeParents = editingParentId;
+            }
+
+            await gapi.client.drive.files.update(requestParams);
+
+            alert("情報を更新しました。");
+            closeUploadModal();
+            
+            // データ再読み込み
+            await fetchDataFromDrive();
+
+        } catch (e) {
+            console.error(e);
+            alert("更新に失敗しました: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "保存";
         }
       }
 
@@ -1023,11 +1074,17 @@
           const badge = rec.isFC ? 
             `<div class="fc-badge"><span class="material-symbols-outlined" style="font-size:1rem;">crown</span> FULL COMBO</div>` : '';
 
+          // JSONデータをHTML属性に埋め込むためにエスケープ
+          const recJson = JSON.stringify(rec).replace(/"/g, '&quot;');
+
           const html = `
             <div class="card ${fcClass}">
               <div class="card-img-container" onclick="openImageModal('${largeUrl}')">
                 <button class="delete-btn" onclick="confirmDelete('${rec.id}', '${escapeHtml(rec.title)}')" title="削除">
                   <span class="material-symbols-outlined">delete</span>
+                </button>
+                <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${recJson})" title="編集">
+                  <span class="material-symbols-outlined">edit</span>
                 </button>
                 ${badge}
                 <div class="img-loader-spinner"></div>
