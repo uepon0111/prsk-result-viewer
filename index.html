@@ -111,7 +111,15 @@
       }
 
       /* OCR Status */
-      #ocr-status { font-size: 0.85rem; color: var(--diff-master); font-weight: bold; margin-bottom: 10px; min-height: 1.2em; display: flex; align-items: center; gap: 6px; }
+      #ocr-status { 
+        font-size: 0.85rem; 
+        color: var(--diff-master); 
+        font-weight: bold; 
+        margin-bottom: 10px; 
+        min-height: 1.2em; 
+        white-space: pre-wrap; /* 改行を有効にする */
+        line-height: 1.5;
+      }
       #ocr-status.error { color: #dc3545; }
 
       .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; transition: color 0.2s; }
@@ -547,35 +555,70 @@
         document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // 画像切り抜き + 前処理
-      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, filterType = 'standard') {
+      // 画像切り抜き + 前処理（二値化処理の強化）
+      async function cropImage(imageElement, xRatio, yRatio, wRatio, hRatio, type = 'standard') {
         const canvas = document.createElement('canvas');
         const w = imageElement.naturalWidth;
         const h = imageElement.naturalHeight;
         
-        canvas.width = w * wRatio;
-        canvas.height = h * hRatio;
+        // OCR精度向上のため少し拡大して切り抜く
+        const scale = 1.5;
+        const targetW = w * wRatio * scale;
+        const targetH = h * hRatio * scale;
+
+        canvas.width = targetW;
+        canvas.height = targetH;
         
         const ctx = canvas.getContext('2d');
         
-        if (filterType === 'invert') {
-            // 難易度用
-            ctx.filter = 'invert(100%) grayscale(100%) contrast(200%)';
-        } else if (filterType === 'high-contrast') {
-            // タイトル・スコア用
-            ctx.filter = 'grayscale(100%) contrast(150%)';
-        }
-
+        // 元画像から切り抜き描画
         ctx.drawImage(
           imageElement, 
           w * xRatio, h * yRatio, w * wRatio, h * hRatio, 
-          0, 0, canvas.width, canvas.height
+          0, 0, targetW, targetH
         );
+
+        // ピクセルデータを取得して直接操作 (二値化)
+        const imageData = ctx.getImageData(0, 0, targetW, targetH);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i+1];
+          const b = data[i+2];
+          
+          // グレースケール変換 (輝度)
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          if (type === 'diff') {
+            // 難易度(APPEND等)用: 文字は白(高輝度)、背景は色付き(中～低輝度)
+            // 白文字を「黒」に、それ以外を「白」に変換して、白背景の黒文字にする
+            // 閾値を高めに設定 (例: 180以上なら文字とみなす)
+            if (gray > 180) {
+                // 文字部分 -> 黒
+                data[i] = data[i+1] = data[i+2] = 0; 
+            } else {
+                // 背景部分 -> 白
+                data[i] = data[i+1] = data[i+2] = 255;
+            }
+          } else {
+            // タイトルやスコア用: 文字は黒やグレー、背景は白に近い
+            // 通常の二値化 (暗い部分を文字として残す)
+            if (gray < 160) {
+                // 文字部分 -> 黒
+                data[i] = data[i+1] = data[i+2] = 0;
+            } else {
+                // 背景部分 -> 白
+                data[i] = data[i+1] = data[i+2] = 255;
+            }
+          }
+        }
         
+        ctx.putImageData(imageData, 0, 0);
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       }
 
-      // 文字列正規化（比較用）: 全角→半角、スペース除去、小文字化
+      // 文字列正規化（比較用）
       function normalizeString(str) {
         if (!str) return "";
         return str
@@ -612,13 +655,11 @@
         if (target.length === 0) return null;
 
         let bestMatch = null;
-        let minScore = Infinity; // 距離スコア（低いほうが良い）
+        let minScore = Infinity; 
 
         for (const music of dbMusics) {
             const dbTitleNorm = normalizeString(music.title);
             const dist = levenshteinDistance(target, dbTitleNorm);
-            
-            // 長さによる正規化距離（長いタイトルでの許容量を増やす）
             const score = dist / Math.max(target.length, dbTitleNorm.length);
             
             if (score < minScore) {
@@ -626,8 +667,6 @@
                 bestMatch = music;
             }
         }
-        
-        // 閾値を緩く設定（0.6など）して、多少違っても一番近いものを返す
         return bestMatch; 
       }
 
@@ -640,7 +679,7 @@
               console.log("[AutoSet] Level set to:", diffEntry.playLevel);
           } else {
               console.warn("[AutoSet] Level not found for ID:", musicId, " Diff:", diffKey);
-              document.getElementById('up-level').value = ""; // 見つからない場合はクリア
+              document.getElementById('up-level').value = "";
           }
       }
 
@@ -683,14 +722,14 @@
                );
             };
 
-            // 日本語と英語の両方をロード (英語は数字とAPPEND/GOOD等の認識に強い)
             const worker = await Tesseract.createWorker(['jpn', 'eng']);
 
             // --- 1. 青枠: 難易度 ---
             const rDiff = {x:0.20, y:0.07, w:0.10, h:0.04};
             drawDebugRect(rDiff, "blue");
-            const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'invert');
-            // 難易度は英語指定
+            // type='diff' を指定して、白文字抽出用の二値化を行う
+            const diffBlob = await cropImage(imgForCrop, rDiff.x, rDiff.y, rDiff.w, rDiff.h, 'diff');
+            
             const diffRet = await worker.recognize(diffBlob, { lang: 'eng' }); 
             const diffText = diffRet.data.text.toUpperCase();
             console.log("[OCR] Diff:", diffText);
@@ -698,8 +737,8 @@
             let detectedDiffCode = null;
             let detectedDiffKey = null;
 
-            // APPEND判定の強化: "APPEND"が崩れて認識されるケースをカバー
-            if (diffText.includes("APPEND") || diffText.includes("APP") || diffText.includes("PEND") || diffText.includes("PPE")) { 
+            // APPEND判定の強化: 二値化後でも多少崩れる可能性を考慮
+            if (diffText.match(/A?P{2}E?N?D?/)) { 
                 detectedDiffCode = "A"; detectedDiffKey = "append"; 
             }
             else if (diffText.includes("MASTER")) { detectedDiffCode = "M"; detectedDiffKey = "master"; }
@@ -713,13 +752,12 @@
             // --- 2. 赤枠: 楽曲タイトル ---
             const rTitle = {x:0.19, y:0.01, w:0.32, h:0.05};
             drawDebugRect(rTitle, "red");
-            const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'high-contrast');
-            // タイトルは日本語含む (デフォルトjpnを使用)
+            const titleBlob = await cropImage(imgForCrop, rTitle.x, rTitle.y, rTitle.w, rTitle.h, 'standard');
             const titleRet = await worker.recognize(titleBlob, { lang: 'jpn' });
             const titleText = titleRet.data.text;
             console.log("[OCR] Title Raw:", titleText);
 
-            // DBから近似検索 (読み取った文字列をそのまま使う処理を削除し、必ずDBマッチさせる)
+            // DBから近似検索
             const matchedMusic = findBestMatchMusic(titleText);
             let musicId = null;
 
@@ -728,18 +766,15 @@
                 musicId = matchedMusic.id;
                 console.log("[OCR] Matched:", matchedMusic.title, "ID:", musicId);
             } else {
-                // 万が一DBが空などの場合のみフォールバック
                 document.getElementById('up-title').value = titleText.replace(/\r?\n/g, '').trim();
                 console.warn("[OCR] No match found in DB");
             }
 
-            // --- 3. レベル自動設定 (OCRではなくDBから引く) ---
-            // タイトル(ID)と難易度が特定できていれば、DBから正しいレベルをセットする
+            // --- 3. レベル自動設定 ---
             if (musicId && detectedDiffKey) {
                 updateLevelFromDb(musicId, detectedDiffKey);
             }
 
-            // 難易度変更時にもレベルを再計算できるようにイベントリスナ登録 (一回だけ)
             const diffSelect = document.getElementById('up-diff');
             diffSelect.onchange = function() {
                 const curVal = this.value;
@@ -751,22 +786,19 @@
             const rMiss = {x:0.10, y:0.55, w:0.20, h:0.28};
             drawDebugRect(rMiss, "#00ff00");
 
-            const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'high-contrast');
-            // 数字とアルファベットなので英語モードを使用（重要）
+            const missBlob = await cropImage(imgForCrop, rMiss.x, rMiss.y, rMiss.w, rMiss.h, 'standard');
             const missRet = await worker.recognize(missBlob, { lang: 'eng' });
             const missText = missRet.data.text;
             
             const lines = missText.split('\n');
             let countGood = 0, countBad = 0, countMiss = 0;
             
-            // 行末の数字を探すヘルパー
             const parseLine = (line) => {
                 const nums = line.match(/\d+/g);
                 if (nums && nums.length > 0) return parseInt(nums[nums.length - 1], 10);
                 return 0;
             };
 
-            // GOOD判定の正規表現を強化 (G,6,C始まり、O,0,Q,D中間、D,P終わりなど許容)
             const regGood = /[G6C][O0Q]{2}[DP]/i; 
             const regBad  = /BAD/i;
             const regMiss = /MISS/i;
@@ -782,9 +814,12 @@
 
             await worker.terminate();
 
-            // 解析完了メッセージに内訳を追加
-            const detailStr = `(G:${countGood}, B:${countBad}, M:${countMiss})`;
-            statusDiv.innerText = `解析完了: ${matchedMusic ? matchedMusic.title : 'タイトル不明'} ${detailStr} (Lv.${document.getElementById('up-level').value})`;
+            // --- 解析完了メッセージ（改行・フォーマット変更） ---
+            const resultTitle = matchedMusic ? matchedMusic.title : 'タイトル不明';
+            const resultLevel = document.getElementById('up-level').value;
+            
+            // innerText で改行を表示するため、スタイルに white-space: pre-wrap を適用済み
+            statusDiv.innerText = `解析完了: ${resultTitle} (Lv.${resultLevel})\nGOOD: ${countGood}\nBAD: ${countBad}\nMISS: ${countMiss}`;
             statusDiv.style.color = "#28a745";
 
           } catch (err) {
